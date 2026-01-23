@@ -1,0 +1,85 @@
+# Godot's own generated files
+.godot/
+.import/
+.export/
+project.godot.bak
+*.translation
+*.tmp
+
+# Export presets
+export_presets.cfg
+
+# Analysis / metric outputs
+complexity_report.json
+complexity_report.csv
+accuracy_report_*.json
+test_results.json
+*.report.json
+*.report.csv
+
+# Cache and logs
+.complexity_cache/
+*.cache
+*.log
+parse_errors.log
+
+# Test outputs
+test_output/
+test_results/
+*.test.json
+
+# Build artefacts
+bin/
+obj/
+build/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE / editor files
+.vscode/*
+!.vscode/settings.json
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Python
+**pycache**/
+*.py[cod]
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Backup and temporary files
+*.bak
+*.backup
+tmp/
+temp/
+
+
+# Config files
+!**/config.json
+!**/package.json
+!**/tsconfig.json
+
+# Docs, will release later
+docs/
+
+#tests, will release later
+tests/
