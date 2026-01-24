@@ -37,7 +37,7 @@ func start_analysis(root_path: String, config_data: ConfigManager.Config, adapte
 	var discovery = preload("res://src/file_discovery.gd").new()
 	files = discovery.find_files(root_path, config.include_patterns, config.exclude_patterns)
 	
-	if files.empty():
+	if files.is_empty():
 		is_running = false
 		return
 	
@@ -95,7 +95,7 @@ func _analyze_file(file_path: String) -> BatchAnalyzer.FileResult:
 		result.success = false
 		return result
 	
-	if tokens.empty():
+	if tokens.is_empty():
 		result.errors.append("No tokens found")
 		result.success = false
 		return result

@@ -34,7 +34,7 @@ func detect_classes(tokens: Array) -> Array:
 	classes.clear()
 	errors.clear()
 	
-	if tokens.empty():
+	if tokens.is_empty():
 		return []
 	
 	var i = 0
@@ -118,7 +118,7 @@ func _get_line_indent(tokens: Array, token_index: int) -> int:
 	return 0
 
 func _count_indent(whitespace: String) -> int:
-	if whitespace.empty():
+	if whitespace.is_empty():
 		return 0
 	
 	var has_tabs = false

@@ -9,7 +9,8 @@ func find_files(root_path: String, include_patterns: Array, exclude_patterns: Ar
 	
 	root_path = _sanitize_path(root_path)
 	
-	if not DirAccess.dir_exists(root_path):
+	var dir = DirAccess.open(root_path)
+	if dir == null:
 		return files
 	
 	_find_files_recursive(root_path, root_path, include_patterns, exclude_patterns, files)
@@ -67,7 +68,7 @@ func _make_relative(root_path: String, full_path: String) -> String:
 	return full_path
 
 func _matches_patterns(file_path: String, include_patterns: Array, exclude_patterns: Array) -> bool:
-	if include_patterns.empty():
+	if include_patterns.is_empty():
 		return false
 	
 	var matches_include = false

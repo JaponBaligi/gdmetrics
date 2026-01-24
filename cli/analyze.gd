@@ -45,7 +45,7 @@ func analyze_file(file_path: String) -> Dictionary:
 		result["error"] = "Tokenization failed"
 		return result
 	
-	if tokens.empty():
+	if tokens.is_empty():
 		result["error"] = "No tokens found in file"
 		return result
 

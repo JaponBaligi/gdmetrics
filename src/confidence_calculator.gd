@@ -31,7 +31,7 @@ var result: ConfidenceResult
 func calculate_confidence(tokens: Array, errors: Array, version_adapter: VersionAdapter = null) -> ConfidenceResult:
 	result = ConfidenceResult.new()
 	
-	if tokens.empty():
+	if tokens.is_empty():
 		result.score = 0.0
 		return result
 	
@@ -64,7 +64,7 @@ func calculate_confidence(tokens: Array, errors: Array, version_adapter: Version
 	return result
 
 func _calculate_token_coverage(tokens: Array) -> float:
-	if tokens.empty():
+	if tokens.is_empty():
 		return 0.0
 	
 	var total_chars = 0
@@ -83,7 +83,7 @@ func _calculate_token_coverage(tokens: Array) -> float:
 	return float(recognized_chars) / float(total_chars)
 
 func _calculate_indentation_consistency(tokens: Array) -> float:
-	if tokens.empty():
+	if tokens.is_empty():
 		return 1.0
 	
 	var indent_levels: Array = []
@@ -127,7 +127,7 @@ func _calculate_indentation_consistency(tokens: Array) -> float:
 	return max(0.0, consistency)
 
 func _count_indent(whitespace: String) -> int:
-	if whitespace.empty():
+	if whitespace.is_empty():
 		return 0
 	
 	var count = 0
@@ -140,7 +140,7 @@ func _count_indent(whitespace: String) -> int:
 	return count
 
 func _calculate_block_balance(tokens: Array) -> float:
-	if tokens.empty():
+	if tokens.is_empty():
 		return 1.0
 	
 	var paren_depth = 0

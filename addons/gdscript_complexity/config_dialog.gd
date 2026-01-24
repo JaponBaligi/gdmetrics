@@ -224,7 +224,7 @@ func _validate_config(config: ConfigManager.Config) -> bool:
 		OS.alert("C-COG thresholds must be >= 0", "Validation Error")
 		return false
 	
-	if config.include_patterns.empty():
+	if config.include_patterns.is_empty():
 		OS.alert("At least one include pattern is required", "Validation Error")
 		return false
 	

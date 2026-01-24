@@ -43,7 +43,7 @@ func analyze_project(root_path: String, config, adapter = null) -> ProjectResult
 	
 	project_result.total_files = files.size()
 	
-	if files.empty():
+	if files.is_empty():
 		project_result.errors.append("No files found matching include patterns")
 		return project_result
 	
@@ -93,7 +93,7 @@ func _analyze_file(file_path: String, config) -> FileResult:
 		result.success = false
 		return result
 	
-	if tokens.empty():
+	if tokens.is_empty():
 		result.errors.append("No tokens found")
 		result.success = false
 		return result

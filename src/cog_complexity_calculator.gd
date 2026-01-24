@@ -32,7 +32,7 @@ func calculate_cog(control_flow_nodes: Array, functions: Array = []) -> CogCompl
 	in_match_block = false
 	match_start_line = -1
 	
-	if control_flow_nodes.empty():
+	if control_flow_nodes.is_empty():
 		return result
 	
 	var i = 0
@@ -81,7 +81,7 @@ func calculate_cog(control_flow_nodes: Array, functions: Array = []) -> CogCompl
 		
 		i += 1
 	
-	if not functions.empty():
+	if not functions.is_empty():
 		_calculate_per_function(control_flow_nodes, functions)
 	
 	return result
