@@ -130,16 +130,13 @@ func _sanitize_path(path: String) -> String:
 		return "complexity_report.json"
 	
 	var sanitized = path.replace("\\", "/")
-	
-	# Remove path traversal attempts
+
 	while sanitized.find("../") >= 0:
 		sanitized = sanitized.replace("../", "")
-	
-	# Remove leading slashes
+
 	while sanitized.begins_with("/"):
 		sanitized = sanitized.substr(1)
-	
-	# Ensure it's relative
+
 	if sanitized.begins_with("res://"):
 		sanitized = sanitized.substr(6)
 	

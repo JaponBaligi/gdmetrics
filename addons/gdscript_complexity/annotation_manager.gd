@@ -3,11 +3,10 @@ extends RefCounted
 class_name AnnotationManager
 
 # Adds complexity warnings to script editor
-# Supports both Godot 3.x (set_error) and 4.x (add_error_annotation) APIs
 
 var script_editor: Object = null
 var has_annotation_support: bool = false
-var annotation_api: String = "none"  # "set_error" (3.x) or "add_error_annotation" (4.x) or "none"
+var annotation_api: String = "none" 
 var version_adapter: VersionAdapter = null
 
 func _init(adapter: VersionAdapter = null):
@@ -31,20 +30,17 @@ func _detect_annotation_support():
 		has_annotation_support = false
 		annotation_api = "none"
 		return
-	
-	# Try Godot 4.x API first
+
 	if script_editor.has_method("add_error_annotation"):
 		has_annotation_support = true
 		annotation_api = "add_error_annotation"
 		return
-	
-	# Try Godot 3.x API
+
 	if script_editor.has_method("set_error"):
 		has_annotation_support = true
 		annotation_api = "set_error"
 		return
-	
-	# No annotation support
+
 	has_annotation_support = false
 	annotation_api = "none"
 	print("[ComplexityAnalyzer] No annotation API available (neither add_error_annotation nor set_error)")
@@ -85,8 +81,6 @@ func _set_error_3x(script_path: String, line: int, message: String, severity: St
 		_fallback_log(script_path, line, message, severity)
 		return
 	
-	# Godot 3.x set_error signature: set_error(script, line, message)
-	# Note: Godot 3.x doesn't have severity levels, so we prepend it to the message
 	var full_message = "[%s] %s" % [severity.to_upper(), message]
 	script_editor.set_error(script_path, line, full_message)
 

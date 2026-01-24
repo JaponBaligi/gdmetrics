@@ -65,7 +65,6 @@ extends Control
 class_name ComplexityDockPanel
 
 # Displays complexity analysis results and controls
-# Compatible with both Godot 3.x and 4.x
 
 signal analyze_requested
 signal export_requested(format: String)
@@ -91,8 +90,7 @@ func _setup_ui():
 	var vbox = VBoxContainer.new()
 	add_child(vbox)
 	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	
-	# Top buttons row
+
 	var button_row = HBoxContainer.new()
 	vbox.add_child(button_row)
 	
@@ -127,9 +125,6 @@ func _setup_ui():
 
 	status_label = Label.new()
 	status_label.text = "Ready"
-	# Handle autowrap_mode for Godot 3.x vs 4.x
-	# Both versions support Label.AUTOWRAP_WORD_SMART, but 4.x also has TextServer
-	# Using Label enum for compatibility
 	status_label.autowrap_mode = Label.AUTOWRAP_WORD_SMART
 	vbox.add_child(status_label)
 
