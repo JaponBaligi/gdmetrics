@@ -6,18 +6,17 @@ class_name FileDiscovery
 
 func find_files(root_path: String, include_patterns: Array, exclude_patterns: Array) -> Array:
 	var files: Array = []
-	var dir = Directory.new()
 	
 	root_path = _sanitize_path(root_path)
 	
-	if not dir.dir_exists(root_path):
+	if not DirAccess.dir_exists(root_path):
 		return files
 	
 	_find_files_recursive(root_path, root_path, include_patterns, exclude_patterns, files)
 	return files
 
 func _sanitize_path(path: String) -> String:
-	if path.empty():
+	if path.is_empty():
 		return "."
 	
 	var sanitized = path.replace("\\", "/")
@@ -32,12 +31,12 @@ func _sanitize_path(path: String) -> String:
 	return sanitized
 
 func _find_files_recursive(root_path: String, current_path: String, include_patterns: Array, exclude_patterns: Array, files: Array):
-	var dir = Directory.new()
+	var dir = DirAccess.open(current_path)
 	
-	if dir.open(current_path) != OK:
+	if dir == null:
 		return
 	
-	dir.list_dir_begin(true, true)
+	dir.list_dir_begin()
 	var file_name = dir.get_next()
 	
 	while file_name != "":
@@ -46,7 +45,7 @@ func _find_files_recursive(root_path: String, current_path: String, include_patt
 			file_name = dir.get_next()
 			continue
 		
-		var full_path = current_path.plus_file(file_name)
+		var full_path = current_path.path_join(file_name)
 		full_path = _sanitize_path(full_path)
 		
 		if dir.current_is_dir():
@@ -58,8 +57,6 @@ func _find_files_recursive(root_path: String, current_path: String, include_patt
 					files.append(full_path)
 		
 		file_name = dir.get_next()
-	
-	dir.list_dir_end()
 
 func _make_relative(root_path: String, full_path: String) -> String:
 	if full_path.begins_with(root_path):

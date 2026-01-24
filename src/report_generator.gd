@@ -116,17 +116,17 @@ func write_report(report: Dictionary, output_path: String) -> bool:
 	
 	var json_string = to_json(report)
 	
-	var file = File.new()
-	if file.open(output_path, File.WRITE) != OK:
+	var file = FileAccess.open(output_path, FileAccess.WRITE)
+	if file == null:
 		return false
 	
 	file.store_string(json_string)
-	file.close()
+	file = null
 	
 	return true
 
 func _sanitize_path(path: String) -> String:
-	if path.empty():
+	if path.is_empty():
 		return "complexity_report.json"
 	
 	var sanitized = path.replace("\\", "/")

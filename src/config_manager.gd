@@ -61,17 +61,17 @@ func load_config(config_file_path: String) -> bool:
 	errors.clear()
 	config_path = config_file_path
 	
-	var file = File.new()
-	if not file.file_exists(config_file_path):
+	if not FileAccess.file_exists(config_file_path):
 		errors.append("Config file not found: %s (using defaults)" % config_file_path)
 		return false
 	
-	if file.open(config_file_path, File.READ) != OK:
+	var file = FileAccess.open(config_file_path, FileAccess.READ)
+	if file == null:
 		errors.append("Failed to open config file: %s (using defaults)" % config_file_path)
 		return false
 	
 	var json_text = file.get_as_text()
-	file.close()
+	file = null
 	
 	var json = JSON.new()
 	var parse_result = json.parse(json_text)

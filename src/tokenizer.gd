@@ -60,12 +60,12 @@ func tokenize_file(file_path: String) -> Array:
 	multiline_buffer = ""
 	multiline_start_line = 1
 	
-	var file = File.new()
-	if not file.file_exists(file_path):
+	if not FileAccess.file_exists(file_path):
 		errors.append("File not found: %s" % file_path)
 		return []
 	
-	if file.open(file_path, File.READ) != OK:
+	var file = FileAccess.open(file_path, FileAccess.READ)
+	if file == null:
 		errors.append("Failed to open file: %s" % file_path)
 		return []
 	
@@ -75,7 +75,7 @@ func tokenize_file(file_path: String) -> Array:
 		tokenize_line(line, line_number)
 		line_number += 1
 	
-	file.close()
+	file = null
 	
 	if in_multiline_comment:
 		errors.append("Unterminated multi-line comment starting at line %d" % multiline_start_line)
