@@ -47,9 +47,9 @@ func _enter_tree():
 	async_analyzer.analysis_complete.connect(_on_analysis_complete)
 	async_analyzer.analysis_cancelled.connect(_on_analysis_cancelled)
 	
-	annotation_manager = preload("res://addons/gdscript_complexity/annotation_manager.gd").new()
+	annotation_manager = preload("res://addons/gdscript_complexity/annotation_manager.gd").new(version_adapter)
 	if annotation_manager.is_supported():
-		print("[ComplexityAnalyzer] Editor annotations supported")
+		print("[ComplexityAnalyzer] Editor annotations supported (%s)" % annotation_manager.get_annotation_api())
 	else:
 		print("[ComplexityAnalyzer] Editor annotations not available, using console logging")
 	
