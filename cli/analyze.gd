@@ -3,7 +3,7 @@
 
 extends SceneTree
 
-func _ready():
+func _initialize():
 	var args = OS.get_cmdline_args()
 	var file_path = null
 
@@ -13,7 +13,7 @@ func _ready():
 	
 	if not file_path:
 		print("Usage: godot --script cli/analyze.gd -- <file.gd>")
-		quit(1)
+		call_deferred("quit", 1)
 		return
 
 	var result = analyze_file(file_path)
@@ -21,9 +21,9 @@ func _ready():
 	print(to_json(result))
 
 	if result.has("error"):
-		quit(1)
+		call_deferred("quit", 1)
 	else:
-		quit(0)
+		call_deferred("quit", 0)
 
 func analyze_file(file_path: String) -> Dictionary:
 

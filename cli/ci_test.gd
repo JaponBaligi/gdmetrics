@@ -12,7 +12,7 @@ var FORBIDDEN_OUTPUT_PATHS = [
 	".github/"
 ]
 
-func _ready():
+func _initialize():
 	var args = OS.get_cmdline_args()
 	var project_path = "."
 	var output_path = "ci_report.json"
@@ -33,7 +33,7 @@ func _ready():
 				i += 1
 	
 	var exit_code = run_analysis(project_path, output_path)
-	quit(exit_code)
+	call_deferred("quit", exit_code)
 
 func _sanitize_path(path: String) -> String:
 	if path.is_empty():
