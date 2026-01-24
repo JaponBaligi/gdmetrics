@@ -4,6 +4,7 @@ extends EditorPlugin
 var dock_panel: Control = null
 var config_manager: ConfigManager = null
 var async_analyzer: AsyncAnalyzer = null
+var annotation_manager: AnnotationManager = null
 var godot_version: Dictionary = {}
 
 func _enter_tree():
@@ -37,6 +38,12 @@ func _enter_tree():
 	async_analyzer.analysis_complete.connect(_on_analysis_complete)
 	async_analyzer.analysis_cancelled.connect(_on_analysis_cancelled)
 	
+	annotation_manager = preload("res://addons/gdscript_complexity/annotation_manager.gd").new()
+	if annotation_manager.is_supported():
+		print("[ComplexityAnalyzer] Editor annotations supported")
+	else:
+		print("[ComplexityAnalyzer] Editor annotations not available, using console logging")
+	
 	dock_panel.analyze_requested.connect(_on_analyze_requested)
 	dock_panel.cancel_requested.connect(_on_cancel_requested)
 	dock_panel.config_requested.connect(_on_config_requested)
@@ -56,6 +63,7 @@ func _exit_tree():
 		dock_panel = null
 	
 	async_analyzer = null
+	annotation_manager = null
 	config_manager = null
 	print("[ComplexityAnalyzer] Plugin cleaned up")
 
@@ -118,6 +126,12 @@ func _add_file_result(file_result: BatchAnalyzer.FileResult):
 			if file_result.per_function_cog.has(func_info.name):
 				var cog = file_result.per_function_cog[func_info.name]
 				dock_panel.add_function_result(file_item, func_info.name, 0, cog)
+	
+	if annotation_manager != null and config_manager != null:
+		var config = config_manager.get_config()
+		var cc_threshold = config.cc_config["threshold_warn"]
+		var cog_threshold = config.cog_config["threshold_warn"]
+		annotation_manager.annotate_file_results(file_result, cc_threshold, cog_threshold)
 
 func _on_analysis_complete(project_result: BatchAnalyzer.ProjectResult):
 	call_deferred("_finalize_analysis", project_result)
