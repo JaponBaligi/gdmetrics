@@ -15,6 +15,7 @@ class FileResult:
 	var errors: Array = []
 	var cc_breakdown: Dictionary = {}
 	var cog_breakdown: Dictionary = {}
+	var per_function_cog: Dictionary = {}
 
 class ProjectResult:
 	var total_files: int = 0
@@ -115,6 +116,7 @@ func _analyze_file(file_path: String, config: ConfigManager.Config) -> FileResul
 	var cog_result = cog_calc.calculate_cog(control_flow_nodes, functions)
 	result.cog = cog_result.total_cog
 	result.cog_breakdown = cog_result.breakdown
+	result.per_function_cog = cog_result.per_function
 	
 	var confidence_calc = preload("res://src/confidence_calculator.gd").new()
 	var confidence_result = confidence_calc.calculate_confidence(tokens, tokenizer_errors, "4.0")
