@@ -21,10 +21,13 @@ func _enter_tree():
 	
 	var config_path = "res://complexity_config.json"
 	if not config_manager.load_config(config_path):
-		if config_manager.has_errors():
-			for error in config_manager.get_errors():
-				print("[ComplexityAnalyzer] Config warning: %s" % error)
-		print("[ComplexityAnalyzer] Using default configuration")
+	if config_manager.has_errors():
+		for error in config_manager.get_errors():
+			print("[ComplexityAnalyzer] Config warning: %s" % error)
+	print("[ComplexityAnalyzer] Using default configuration")
+
+	dock_panel = preload("res://addons/gdscript_complexity/dock_panel.gd").new()
+	add_control_to_dock(DOCK_SLOT_LEFT_UL, dock_panel)
 	
 	print("[ComplexityAnalyzer] Plugin initialized successfully")
 
