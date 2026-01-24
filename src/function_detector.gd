@@ -212,7 +212,7 @@ func _parse_signal_declaration(tokens: Array, start: int) -> Dictionary:
 	var signal_col = tokens[i].column
 	i += 1
 	while i < tokens.size() and tokens[i].type == GDScriptTokenizer.TokenType.WHITESPACE:
-		i += 1)
+		i += 1
 	var params: Array = []
 	if i < tokens.size() and tokens[i].value == "(":
 		i += 1
