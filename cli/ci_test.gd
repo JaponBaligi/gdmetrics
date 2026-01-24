@@ -33,10 +33,10 @@ func _init():
 				i += 1
 	
 	var exit_code = run_analysis(project_path, output_path)
-	OS.exit_code = exit_code
+	OS.exit(exit_code)
 
 func _sanitize_path(path: String) -> String:
-	if path.empty():
+	if path.is_empty():
 		return "."
 	
 	var sanitized = path.replace("\\", "/")

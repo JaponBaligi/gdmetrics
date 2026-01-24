@@ -26,7 +26,7 @@ jobs:
     
     - name: Run CLI Analysis Test
       run: |
-        godot --headless --script cli/ci_test.gd -- --project-path . --output ci_report.json
+        godot --headless --path . --script cli/ci_test.gd -- --project-path . --output ci_report.json
     
     - name: Validate JSON Output
       run: |
@@ -38,5 +38,5 @@ jobs:
     
     - name: Validate Parser Stability
       run: |
-        godot --headless --script tests/validate_parser_stability.gd -- --project-path .
+        godot --headless --path . --script tests/validate_parser_stability.gd -- --project-path .
 

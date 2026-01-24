@@ -13,7 +13,7 @@ func _init():
 	
 	if not file_path:
 		print("Usage: godot --script cli/analyze.gd -- <file.gd>")
-		OS.exit_code = 1
+		OS.exit(1)
 		return
 
 	var result = analyze_file(file_path)
@@ -21,9 +21,9 @@ func _init():
 	print(to_json(result))
 
 	if result.has("error"):
-		OS.exit_code = 1
+		OS.exit(1)
 	else:
-		OS.exit_code = 0
+		OS.exit(0)
 
 func analyze_file(file_path: String) -> Dictionary:
 
