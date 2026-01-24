@@ -19,8 +19,9 @@ var files: Array = []
 var current_index: int = 0
 var project_result: BatchAnalyzer.ProjectResult = null
 var config: ConfigManager.Config = null
+var version_adapter: VersionAdapter = null
 
-func start_analysis(root_path: String, config_data: ConfigManager.Config):
+func start_analysis(root_path: String, config_data: ConfigManager.Config, adapter: VersionAdapter = null):
 	if is_running:
 		return
 	
@@ -29,7 +30,9 @@ func start_analysis(root_path: String, config_data: ConfigManager.Config):
 	current_index = 0
 	
 	config = config_data
+	version_adapter = adapter
 	batch_analyzer = preload("res://src/batch_analyzer.gd").new()
+	batch_analyzer.version_adapter = version_adapter
 	
 	var discovery = preload("res://src/file_discovery.gd").new()
 	files = discovery.find_files(root_path, config.include_patterns, config.exclude_patterns)
@@ -98,7 +101,7 @@ func _analyze_file(file_path: String) -> BatchAnalyzer.FileResult:
 		return result
 	
 	var detector = preload("res://src/control_flow_detector.gd").new()
-	var control_flow_nodes = detector.detect_control_flow(tokens)
+	var control_flow_nodes = detector.detect_control_flow(tokens, version_adapter)
 	
 	var func_detector = preload("res://src/function_detector.gd").new()
 	var functions = func_detector.detect_functions(tokens)
@@ -120,7 +123,7 @@ func _analyze_file(file_path: String) -> BatchAnalyzer.FileResult:
 	result.per_function_cog = cog_result.per_function
 	
 	var confidence_calc = preload("res://src/confidence_calculator.gd").new()
-	var confidence_result = confidence_calc.calculate_confidence(tokens, tokenizer_errors, "4.0")
+	var confidence_result = confidence_calc.calculate_confidence(tokens, tokenizer_errors, version_adapter)
 	result.confidence = confidence_result.score
 	
 	result.success = true

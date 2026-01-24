@@ -34,6 +34,8 @@ func analyze_file(file_path: String) -> Dictionary:
 		"errors": []
 	}
 
+	var version_adapter = preload("res://addons/gdscript_complexity/version_adapter.gd").new()
+	
 	var tokenizer = preload("res://src/tokenizer.gd").new()
 	var tokens = tokenizer.tokenize_file(file_path)
 	var tokenizer_errors = tokenizer.get_errors()
@@ -48,7 +50,7 @@ func analyze_file(file_path: String) -> Dictionary:
 		return result
 
 	var detector = preload("res://src/control_flow_detector.gd").new()
-	var control_flow_nodes = detector.detect_control_flow(tokens)
+	var control_flow_nodes = detector.detect_control_flow(tokens, version_adapter)
 	var detector_errors = detector.get_errors()
 	
 	if detector_errors.size() > 0:

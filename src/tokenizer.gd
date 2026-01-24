@@ -34,7 +34,7 @@ const KEYWORDS = [
 	"if", "elif", "else", "for", "while", "break", "continue", "return",
 	"func", "class", "extends", "var", "const", "signal", "class_name",
 	"and", "or", "not", "true", "false", "null",
-	"pass", "self", "super", "match", "case"
+	"pass", "self", "super", "match", "case", "yield", "await"
 ]
 
 const SINGLE_OPS = ["+", "-", "*", "/", "%", "=", "<", ">", "!", "&", "|", "^", "~", "?", ":", ".", ",", ";", "(", ")", "[", "]", "{", "}"]

@@ -77,11 +77,14 @@ func run_analysis(project_path: String, output_path: String) -> int:
 	print("Project path: %s" % project_path)
 	print("Output path: %s" % output_path)
 	
+	var version_adapter = preload("res://addons/gdscript_complexity/version_adapter.gd").new()
+	print("Godot version: %s" % version_adapter.get_version_string())
+	
 	var config = preload("res://src/config_manager.gd").new()
 	var default_config = config.get_config()
 	
 	var batch_analyzer = preload("res://src/batch_analyzer.gd").new()
-	var project_result = batch_analyzer.analyze_project(project_path, default_config)
+	var project_result = batch_analyzer.analyze_project(project_path, default_config, version_adapter)
 	
 	if project_result.total_files == 0:
 		print("ERROR: No files found for analysis")

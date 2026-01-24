@@ -32,9 +32,11 @@ class ProjectResult:
 	var errors: Array = []
 
 var project_result: ProjectResult
+var version_adapter: VersionAdapter = null
 
-func analyze_project(root_path: String, config: ConfigManager.Config) -> ProjectResult:
+func analyze_project(root_path: String, config: ConfigManager.Config, adapter: VersionAdapter = null) -> ProjectResult:
 	project_result = ProjectResult.new()
+	version_adapter = adapter
 	
 	var discovery = preload("res://src/file_discovery.gd").new()
 	var files = discovery.find_files(root_path, config.include_patterns, config.exclude_patterns)
@@ -97,7 +99,7 @@ func _analyze_file(file_path: String, config: ConfigManager.Config) -> FileResul
 		return result
 	
 	var detector = preload("res://src/control_flow_detector.gd").new()
-	var control_flow_nodes = detector.detect_control_flow(tokens)
+	var control_flow_nodes = detector.detect_control_flow(tokens, version_adapter)
 	
 	var func_detector = preload("res://src/function_detector.gd").new()
 	var functions = func_detector.detect_functions(tokens)
@@ -119,7 +121,7 @@ func _analyze_file(file_path: String, config: ConfigManager.Config) -> FileResul
 	result.per_function_cog = cog_result.per_function
 	
 	var confidence_calc = preload("res://src/confidence_calculator.gd").new()
-	var confidence_result = confidence_calc.calculate_confidence(tokens, tokenizer_errors, "4.0")
+	var confidence_result = confidence_calc.calculate_confidence(tokens, tokenizer_errors, version_adapter)
 	result.confidence = confidence_result.score
 	
 	result.success = true

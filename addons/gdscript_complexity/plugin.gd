@@ -120,7 +120,7 @@ func _on_analyze_requested():
 	dock_panel.set_cancel_button_enabled(true)
 	dock_panel.show_progress(true)
 	
-	async_analyzer.start_analysis(project_path, config_manager.get_config())
+	async_analyzer.start_analysis(project_path, config_manager.get_config(), version_adapter)
 
 func _on_progress_updated(current: int, total: int, file_path: String):
 	call_deferred("_update_progress", current, total, file_path)

@@ -28,7 +28,7 @@ var default_weights: Dictionary = {
 
 var result: ConfidenceResult
 
-func calculate_confidence(tokens: Array, errors: Array, godot_version: String = "4.0") -> ConfidenceResult:
+func calculate_confidence(tokens: Array, errors: Array, version_adapter: VersionAdapter = null) -> ConfidenceResult:
 	result = ConfidenceResult.new()
 	
 	if tokens.empty():
@@ -54,11 +54,12 @@ func calculate_confidence(tokens: Array, errors: Array, godot_version: String = 
 	
 	result.score = clamp(result.score, 0.0, 1.0)
 	
-	if godot_version.begins_with("3."):
-		if result.score > 0.90:
+	if version_adapter != null:
+		var cap = version_adapter.get_confidence_cap()
+		if result.score > cap:
 			result.capped = true
-			result.cap_reason = "Godot 3.x max confidence cap"
-			result.score = 0.90
+			result.cap_reason = "Godot %s max confidence cap" % version_adapter.get_version_string()
+			result.score = cap
 	
 	return result
 

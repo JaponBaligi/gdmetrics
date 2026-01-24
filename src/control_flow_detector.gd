@@ -23,14 +23,20 @@ class ControlFlowNode:
 var detected_nodes: Array = []
 var errors: Array = []
 var in_match_block: bool = false
+var version_adapter: VersionAdapter = null
 
-func detect_control_flow(tokens: Array) -> Array:
+func detect_control_flow(tokens: Array, adapter: VersionAdapter = null) -> Array:
 	detected_nodes.clear()
 	errors.clear()
 	in_match_block = false
+	version_adapter = adapter
 	
 	if tokens.empty():
 		return []
+	
+	var supports_match = true
+	if version_adapter != null:
+		supports_match = version_adapter.supports_match_statements()
 	
 	var i = 0
 	var indent_stack: Array = []  # Stack of indentation levels
@@ -73,10 +79,10 @@ func detect_control_flow(tokens: Array) -> Array:
 				detected_nodes.append(ControlFlowNode.new("for", token.line, token.column, nesting_depth))
 			elif token.value == "while":
 				detected_nodes.append(ControlFlowNode.new("while", token.line, token.column, nesting_depth))
-			elif token.value == "match":
+			elif token.value == "match" and supports_match:
 				detected_nodes.append(ControlFlowNode.new("match", token.line, token.column, nesting_depth))
 				in_match_block = true
-			elif token.value == "case":
+			elif token.value == "case" and supports_match:
 				if in_match_block:
 					detected_nodes.append(ControlFlowNode.new("case", token.line, token.column, nesting_depth))
 			elif token.value == "and":
