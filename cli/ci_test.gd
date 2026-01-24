@@ -74,13 +74,13 @@ func run_analysis(project_path: String, output_path: String) -> int:
 	print("Project path: %s" % project_path)
 	print("Output path: %s" % output_path)
 	
-	var version_adapter = preload("res://addons/gdscript_complexity/version_adapter.gd").new()
+	var version_adapter = load("res://addons/gdscript_complexity/version_adapter.gd").new()
 	print("Godot version: %s" % version_adapter.get_version_string())
 	
-	var config = preload("res://src/config_manager.gd").new()
+	var config = load("res://src/config_manager.gd").new()
 	var default_config = config.get_config()
 	
-	var batch_analyzer = preload("res://src/batch_analyzer.gd").new()
+	var batch_analyzer = load("res://src/batch_analyzer.gd").new()
 	var project_result = batch_analyzer.analyze_project(project_path, default_config, version_adapter)
 	
 	if project_result.total_files == 0:
@@ -95,7 +95,7 @@ func run_analysis(project_path: String, output_path: String) -> int:
 		print("ERROR: No files successfully analyzed")
 		return 1
 	
-	var report_gen = preload("res://src/report_generator.gd").new()
+	var report_gen = load("res://src/report_generator.gd").new()
 	var report = report_gen.generate_report(project_result, default_config)
 	
 	if not report_gen.write_report(report, output_path):

@@ -34,9 +34,9 @@ func analyze_file(file_path: String) -> Dictionary:
 		"errors": []
 	}
 
-	var version_adapter = preload("res://addons/gdscript_complexity/version_adapter.gd").new()
+	var version_adapter = load("res://addons/gdscript_complexity/version_adapter.gd").new()
 	
-	var tokenizer = preload("res://src/tokenizer.gd").new()
+	var tokenizer = load("res://src/tokenizer.gd").new()
 	var tokens = tokenizer.tokenize_file(file_path)
 	var tokenizer_errors = tokenizer.get_errors()
 	
@@ -49,14 +49,14 @@ func analyze_file(file_path: String) -> Dictionary:
 		result["error"] = "No tokens found in file"
 		return result
 
-	var detector = preload("res://src/control_flow_detector.gd").new()
+	var detector = load("res://src/control_flow_detector.gd").new()
 	var control_flow_nodes = detector.detect_control_flow(tokens, version_adapter)
 	var detector_errors = detector.get_errors()
 	
 	if detector_errors.size() > 0:
 		result["errors"] = detector_errors
 
-	var cc_calc = preload("res://src/cc_calculator.gd").new()
+	var cc_calc = load("res://src/cc_calculator.gd").new()
 	var cc = cc_calc.calculate_cc(control_flow_nodes)
 	var breakdown = cc_calc.get_breakdown()
 	
