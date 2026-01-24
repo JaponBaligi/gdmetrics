@@ -1,7 +1,7 @@
 # CI test script
 # Run with: godot --headless --script cli/ci_test.gd -- --project-path . --output report.json
 
-extends Node
+extends SceneTree
 
 var FORBIDDEN_OUTPUT_PATHS = [
 	"project.godot",
@@ -33,7 +33,7 @@ func _ready():
 				i += 1
 	
 	var exit_code = run_analysis(project_path, output_path)
-	get_tree().quit(exit_code)
+	quit(exit_code)
 
 func _sanitize_path(path: String) -> String:
 	if path.is_empty():

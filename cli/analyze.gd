@@ -1,7 +1,7 @@
 # entry point for complexity analysis
 # Run with: godot --script cli/analyze.gd -- file.gd
 
-extends Node
+extends SceneTree
 
 func _ready():
 	var args = OS.get_cmdline_args()
@@ -13,7 +13,7 @@ func _ready():
 	
 	if not file_path:
 		print("Usage: godot --script cli/analyze.gd -- <file.gd>")
-		get_tree().quit(1)
+		quit(1)
 		return
 
 	var result = analyze_file(file_path)
@@ -21,9 +21,9 @@ func _ready():
 	print(to_json(result))
 
 	if result.has("error"):
-		get_tree().quit(1)
+		quit(1)
 	else:
-		get_tree().quit(0)
+		quit(0)
 
 func analyze_file(file_path: String) -> Dictionary:
 
