@@ -1,8 +1,8 @@
 extends Reference
 class_name ConfigManager
 
-# Configuration manager for Phase 2.4
-# Handles JSON configuration parsing, validation, and defaults
+# Configuration manager
+# handles JSON configuration parsing, validation, and defaults
 
 class Config:
 	var include_patterns: Array = []
