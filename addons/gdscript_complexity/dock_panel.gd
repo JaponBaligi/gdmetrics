@@ -7,8 +7,10 @@ class_name ComplexityDockPanel
 signal analyze_requested
 signal export_requested(format: String)
 signal config_requested
+signal cancel_requested
 
 var analyze_button: Button = null
+var cancel_button: Button = null
 var progress_bar: ProgressBar = null
 var results_tree: Tree = null
 var config_button: Button = null
@@ -33,6 +35,12 @@ func _setup_ui():
 	analyze_button.text = "Analyze Project"
 	analyze_button.pressed.connect(_on_analyze_pressed)
 	button_row.add_child(analyze_button)
+	
+	cancel_button = Button.new()
+	cancel_button.text = "Cancel"
+	cancel_button.pressed.connect(_on_cancel_pressed)
+	cancel_button.disabled = true
+	button_row.add_child(cancel_button)
 	
 	config_button = Button.new()
 	config_button.text = "Config"
@@ -116,6 +124,9 @@ func _apply_editor_theme():
 func _on_analyze_pressed():
 	analyze_requested.emit()
 
+func _on_cancel_pressed():
+	cancel_requested.emit()
+
 func _on_config_pressed():
 	config_requested.emit()
 
@@ -176,4 +187,8 @@ func add_function_result(parent_item: TreeItem, func_name: String, cc: int, cog:
 func set_analyze_button_enabled(enabled: bool):
 	if analyze_button != null:
 		analyze_button.disabled = not enabled
+
+func set_cancel_button_enabled(enabled: bool):
+	if cancel_button != null:
+		cancel_button.disabled = not enabled
 
