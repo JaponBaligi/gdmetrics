@@ -1,7 +1,7 @@
 # CI test script
 # Run with: godot --headless --script cli/ci_test.gd -- --project-path . --output report.json
 
-extends RefCounted
+extends Node
 
 var FORBIDDEN_OUTPUT_PATHS = [
 	"project.godot",
@@ -12,7 +12,7 @@ var FORBIDDEN_OUTPUT_PATHS = [
 	".github/"
 ]
 
-func _init():
+func _ready():
 	var args = OS.get_cmdline_args()
 	var project_path = "."
 	var output_path = "ci_report.json"
@@ -33,7 +33,7 @@ func _init():
 				i += 1
 	
 	var exit_code = run_analysis(project_path, output_path)
-	OS.exit(exit_code)
+	get_tree().quit(exit_code)
 
 func _sanitize_path(path: String) -> String:
 	if path.is_empty():
