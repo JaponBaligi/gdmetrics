@@ -32,4 +32,8 @@ jobs:
     - name: Check Report Structure
       run: |
         python3 cli/validate_report.py ci_report.json
+    
+    - name: Validate Parser Stability
+      run: |
+        godot --headless --script tests/validate_parser_stability.gd -- --project-path .
 
