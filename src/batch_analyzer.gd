@@ -32,13 +32,13 @@ class ProjectResult:
 	var errors: Array = []
 
 var project_result: ProjectResult
-var version_adapter: VersionAdapter = null
+var version_adapter = null
 
-func analyze_project(root_path: String, config: ConfigManager.Config, adapter: VersionAdapter = null) -> ProjectResult:
+func analyze_project(root_path: String, config, adapter = null) -> ProjectResult:
 	project_result = ProjectResult.new()
 	version_adapter = adapter
 	
-	var discovery = preload("res://src/file_discovery.gd").new()
+	var discovery = load("res://src/file_discovery.gd").new()
 	var files = discovery.find_files(root_path, config.include_patterns, config.exclude_patterns)
 	
 	project_result.total_files = files.size()
@@ -80,11 +80,11 @@ func analyze_project(root_path: String, config: ConfigManager.Config, adapter: V
 	
 	return project_result
 
-func _analyze_file(file_path: String, config: ConfigManager.Config) -> FileResult:
+func _analyze_file(file_path: String, config) -> FileResult:
 	var result = FileResult.new()
 	result.file_path = file_path
 	
-	var tokenizer = preload("res://src/tokenizer.gd").new()
+	var tokenizer = load("res://src/tokenizer.gd").new()
 	var tokens = tokenizer.tokenize_file(file_path)
 	var tokenizer_errors = tokenizer.get_errors()
 	
@@ -98,29 +98,29 @@ func _analyze_file(file_path: String, config: ConfigManager.Config) -> FileResul
 		result.success = false
 		return result
 	
-	var detector = preload("res://src/control_flow_detector.gd").new()
+	var detector = load("res://src/control_flow_detector.gd").new()
 	var control_flow_nodes = detector.detect_control_flow(tokens, version_adapter)
 	
-	var func_detector = preload("res://src/function_detector.gd").new()
+	var func_detector = load("res://src/function_detector.gd").new()
 	var functions = func_detector.detect_functions(tokens)
 	result.functions = functions
 	
-	var class_detector = preload("res://src/class_detector.gd").new()
+	var class_detector = load("res://src/class_detector.gd").new()
 	var classes = class_detector.detect_classes(tokens)
 	result.classes = classes
 	
-	var cc_calc = preload("res://src/cc_calculator.gd").new()
+	var cc_calc = load("res://src/cc_calculator.gd").new()
 	var cc = cc_calc.calculate_cc(control_flow_nodes)
 	result.cc = cc
 	result.cc_breakdown = cc_calc.get_breakdown()
 	
-	var cog_calc = preload("res://src/cog_complexity_calculator.gd").new()
+	var cog_calc = load("res://src/cog_complexity_calculator.gd").new()
 	var cog_result = cog_calc.calculate_cog(control_flow_nodes, functions)
 	result.cog = cog_result.total_cog
 	result.cog_breakdown = cog_result.breakdown
 	result.per_function_cog = cog_result.per_function
 	
-	var confidence_calc = preload("res://src/confidence_calculator.gd").new()
+	var confidence_calc = load("res://src/confidence_calculator.gd").new()
 	var confidence_result = confidence_calc.calculate_confidence(tokens, tokenizer_errors, version_adapter)
 	result.confidence = confidence_result.score
 	
@@ -136,8 +136,8 @@ func _calculate_worst_offenders(file_results: Array):
 			cc_sorted.append(result)
 			cog_sorted.append(result)
 	
-	cc_sorted.sort_custom(self, "_compare_cc")
-	cog_sorted.sort_custom(self, "_compare_cog")
+	cc_sorted.sort_custom(_compare_cc)
+	cog_sorted.sort_custom(_compare_cog)
 	
 	project_result.worst_cc_files = cc_sorted.slice(0, min(10, cc_sorted.size()))
 	project_result.worst_cog_files = cog_sorted.slice(0, min(10, cog_sorted.size()))

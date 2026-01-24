@@ -151,8 +151,8 @@ func _calculate_worst_offenders():
 			cc_sorted.append(result)
 			cog_sorted.append(result)
 	
-	cc_sorted.sort_custom(self, "_compare_cc")
-	cog_sorted.sort_custom(self, "_compare_cog")
+	cc_sorted.sort_custom(_compare_cc)
+	cog_sorted.sort_custom(_compare_cog)
 	
 	project_result.worst_cc_files = cc_sorted.slice(0, min(10, cc_sorted.size()))
 	project_result.worst_cog_files = cog_sorted.slice(0, min(10, cog_sorted.size()))
