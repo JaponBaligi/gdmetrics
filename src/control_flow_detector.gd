@@ -2,7 +2,7 @@ extends Reference
 class_name ControlFlowDetector
 
 # Control flow detector
-# Detects: if, elif, for, while, and logical operators (and, or, not)
+# Detects: if, elif, for, while, match/case, and logical operators 
 
 class ControlFlowNode:
 	var type: String
@@ -19,10 +19,12 @@ class ControlFlowNode:
 
 var detected_nodes: Array = []
 var errors: Array = []
+var in_match_block: bool = false
 
 func detect_control_flow(tokens: Array) -> Array:
 	detected_nodes.clear()
 	errors.clear()
+	in_match_block = false
 	
 	if tokens.empty():
 		return []
@@ -42,12 +44,23 @@ func detect_control_flow(tokens: Array) -> Array:
 				detected_nodes.append(ControlFlowNode.new("for", token.line, token.column))
 			elif token.value == "while":
 				detected_nodes.append(ControlFlowNode.new("while", token.line, token.column))
+			elif token.value == "match":
+				detected_nodes.append(ControlFlowNode.new("match", token.line, token.column))
+				in_match_block = true
+			elif token.value == "case":
+				if in_match_block:
+					detected_nodes.append(ControlFlowNode.new("case", token.line, token.column))
 			elif token.value == "and":
 				detected_nodes.append(ControlFlowNode.new("and", token.line, token.column))
 			elif token.value == "or":
 				detected_nodes.append(ControlFlowNode.new("or", token.line, token.column))
 			elif token.value == "not":
 				detected_nodes.append(ControlFlowNode.new("not", token.line, token.column))
+		
+		if token.type == GDScriptTokenizer.TokenType.OPERATOR and token.value == ":":
+			if in_match_block:
+				# Colon after case - still in match block
+				pass
 		
 		i += 1
 	
@@ -62,4 +75,3 @@ func count_by_type(type: String) -> int:
 		if node.type == type:
 			count += 1
 	return count
-

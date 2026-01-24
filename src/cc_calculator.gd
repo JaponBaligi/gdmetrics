@@ -3,7 +3,7 @@ class_name CCCalculator
 
 #  Cyclomatic Complexity calculator
 # Formula: CC = 1 (base) + decisions
-# Decisions: if, elif, for, while, logical operators
+# Decisions: if, elif, for, while, match, case, logical operators
 
 var cc_value: int = 0
 var breakdown: Dictionary = {}
@@ -16,6 +16,8 @@ func calculate_cc(control_flow_nodes: Array) -> int:
 		"elif": 0,
 		"for": 0,
 		"while": 0,
+		"match": 0,
+		"case": 0,
 		"and": 0,
 		"or": 0,
 		"not": 0
@@ -35,6 +37,12 @@ func calculate_cc(control_flow_nodes: Array) -> int:
 			"while":
 				cc_value += 1
 				breakdown["while"] += 1
+			"match":
+				cc_value += 1
+				breakdown["match"] += 1
+			"case":
+				cc_value += 1
+				breakdown["case"] += 1
 			"and":
 				cc_value += 1
 				breakdown["and"] += 1
