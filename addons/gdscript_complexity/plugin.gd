@@ -5,6 +5,7 @@ var dock_panel: Control = null
 var config_manager: ConfigManager = null
 var async_analyzer: AsyncAnalyzer = null
 var annotation_manager: AnnotationManager = null
+var config_dialog: ConfigDialog = null
 var godot_version: Dictionary = {}
 
 func _enter_tree():
@@ -44,6 +45,12 @@ func _enter_tree():
 	else:
 		print("[ComplexityAnalyzer] Editor annotations not available, using console logging")
 	
+	config_dialog = preload("res://addons/gdscript_complexity/config_dialog.gd").new()
+	config_dialog.set_config_manager(config_manager)
+	config_dialog.set_config_path("res://complexity_config.json")
+	config_dialog.config_saved.connect(_on_config_saved)
+	add_child(config_dialog)
+	
 	dock_panel.analyze_requested.connect(_on_analyze_requested)
 	dock_panel.cancel_requested.connect(_on_cancel_requested)
 	dock_panel.config_requested.connect(_on_config_requested)
@@ -61,6 +68,10 @@ func _exit_tree():
 		remove_control_from_docks(dock_panel)
 		dock_panel.queue_free()
 		dock_panel = null
+	
+	if config_dialog != null:
+		config_dialog.queue_free()
+		config_dialog = null
 	
 	async_analyzer = null
 	annotation_manager = null
@@ -163,7 +174,14 @@ func _on_cancel_requested():
 		async_analyzer.cancel()
 
 func _on_config_requested():
-	print("[ComplexityAnalyzer] Config requested (not implemented yet)")
+	if config_dialog != null:
+		config_dialog.popup_centered()
+
+func _on_config_saved():
+	print("[ComplexityAnalyzer] Configuration saved")
+	if config_manager != null:
+		var config_path = "res://complexity_config.json"
+		config_manager.load_config(config_path)
 
 func _on_export_requested(format: String):
 	print("[ComplexityAnalyzer] Export requested: %s (not implemented yet)" % format)
