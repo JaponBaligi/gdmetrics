@@ -124,8 +124,7 @@ func _count_indent(whitespace: String) -> int:
 		elif whitespace[i] == " ":
 			has_spaces = true
 			count += 1
-	
-	# Mixed indentation is invalid
+
 	if has_tabs and has_spaces:
 		return -1
 	
