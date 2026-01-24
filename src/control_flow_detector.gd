@@ -1,7 +1,7 @@
 extends Reference
 class_name ControlFlowDetector
 
-# Control flow detector with nesting depth tracking
+# Control flow detector 
 # Detects: if, elif, for, while, match/case, and logical operators
 # Tracks indentation-based nesting depth for C-COG calculations
 
