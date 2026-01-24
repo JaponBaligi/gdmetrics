@@ -6,6 +6,7 @@ var config_manager: ConfigManager = null
 var async_analyzer: AsyncAnalyzer = null
 var annotation_manager: AnnotationManager = null
 var config_dialog: ConfigDialog = null
+var version_adapter: VersionAdapter = null
 var godot_version: Dictionary = {}
 
 func _enter_tree():
@@ -16,9 +17,16 @@ func _enter_tree():
 		godot_version["major"], godot_version["minor"], godot_version["patch"]
 	])
 	
-	if godot_version["major"] < 4:
-		push_error("[ComplexityAnalyzer] Plugin requires Godot 4.x")
+	version_adapter = preload("res://addons/gdscript_complexity/version_adapter.gd").new()
+	
+	if not version_adapter.is_supported_version():
+		push_error("[ComplexityAnalyzer] Unsupported Godot version: %s" % version_adapter.get_version_string())
 		return
+	
+	print("[ComplexityAnalyzer] Version adapter initialized: %s" % version_adapter.get_version_string())
+	
+	if godot_version["major"] < 4:
+		print("[ComplexityAnalyzer] Running in Godot 3.x mode (best-effort support)")
 	
 	config_manager = preload("res://src/config_manager.gd").new()
 	
@@ -44,6 +52,9 @@ func _enter_tree():
 		print("[ComplexityAnalyzer] Editor annotations supported")
 	else:
 		print("[ComplexityAnalyzer] Editor annotations not available, using console logging")
+	
+	if version_adapter != null and not version_adapter.supports_editor_annotations():
+		print("[ComplexityAnalyzer] Editor annotations disabled for Godot 3.x")
 	
 	config_dialog = preload("res://addons/gdscript_complexity/config_dialog.gd").new()
 	config_dialog.set_config_manager(config_manager)
@@ -75,6 +86,7 @@ func _exit_tree():
 	
 	async_analyzer = null
 	annotation_manager = null
+	version_adapter = null
 	config_manager = null
 	print("[ComplexityAnalyzer] Plugin cleaned up")
 
@@ -94,8 +106,8 @@ func get_godot_version() -> Dictionary:
 func is_godot_4() -> bool:
 	return godot_version["major"] == 4
 
-func get_config_manager() -> ConfigManager:
-	return config_manager
+func get_version_adapter() -> VersionAdapter:
+	return version_adapter
 
 func _on_analyze_requested():
 	if async_analyzer == null or async_analyzer.is_analysis_running():
