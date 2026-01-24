@@ -1,4 +1,4 @@
-extends Reference
+extends RefCounted
 class_name FileDiscovery
 
 # File discovery system
@@ -8,11 +8,28 @@ func find_files(root_path: String, include_patterns: Array, exclude_patterns: Ar
 	var files: Array = []
 	var dir = Directory.new()
 	
+	root_path = _sanitize_path(root_path)
+	
 	if not dir.dir_exists(root_path):
 		return files
 	
 	_find_files_recursive(root_path, root_path, include_patterns, exclude_patterns, files)
 	return files
+
+func _sanitize_path(path: String) -> String:
+	if path.empty():
+		return "."
+	
+	var sanitized = path.replace("\\", "/")
+
+	while sanitized.find("../") >= 0:
+		sanitized = sanitized.replace("../", "")
+
+	if not sanitized.begins_with("res://"):
+		while sanitized.begins_with("/"):
+			sanitized = sanitized.substr(1)
+	
+	return sanitized
 
 func _find_files_recursive(root_path: String, current_path: String, include_patterns: Array, exclude_patterns: Array, files: Array):
 	var dir = Directory.new()
@@ -24,7 +41,13 @@ func _find_files_recursive(root_path: String, current_path: String, include_patt
 	var file_name = dir.get_next()
 	
 	while file_name != "":
+	
+		if file_name.find("..") >= 0 or file_name.find("/") >= 0 or file_name.find("\\") >= 0:
+			file_name = dir.get_next()
+			continue
+		
 		var full_path = current_path.plus_file(file_name)
+		full_path = _sanitize_path(full_path)
 		
 		if dir.current_is_dir():
 			_find_files_recursive(root_path, full_path, include_patterns, exclude_patterns, files)

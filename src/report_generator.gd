@@ -1,4 +1,4 @@
-extends Reference
+extends RefCounted
 class_name ReportGenerator
 
 # JSON report generator 
@@ -93,7 +93,27 @@ func _format_classes(classes: Array) -> Array:
 		})
 	return class_list
 
+extends RefCounted
+class_name ReportGenerator
+
+# JSON report generator 
+# generates JSON reports from analysis results
+
+var FORBIDDEN_OUTPUT_PATHS = [
+	"project.godot",
+	".git",
+	"src/",
+	"cli/",
+	"docs/",
+	".github/"
+]
+
 func write_report(report: Dictionary, output_path: String) -> bool:
+	output_path = _sanitize_path(output_path)
+	
+	if not _check_output_overwrite(output_path):
+		return false
+	
 	var json_string = to_json(report)
 	
 	var file = File.new()
@@ -102,6 +122,36 @@ func write_report(report: Dictionary, output_path: String) -> bool:
 	
 	file.store_string(json_string)
 	file.close()
+	
+	return true
+
+func _sanitize_path(path: String) -> String:
+	if path.empty():
+		return "complexity_report.json"
+	
+	var sanitized = path.replace("\\", "/")
+	
+	# Remove path traversal attempts
+	while sanitized.find("../") >= 0:
+		sanitized = sanitized.replace("../", "")
+	
+	# Remove leading slashes
+	while sanitized.begins_with("/"):
+		sanitized = sanitized.substr(1)
+	
+	# Ensure it's relative
+	if sanitized.begins_with("res://"):
+		sanitized = sanitized.substr(6)
+	
+	return sanitized
+
+func _check_output_overwrite(output_path: String) -> bool:
+	var normalized = output_path.replace("\\", "/").to_lower()
+	
+	for forbidden in FORBIDDEN_OUTPUT_PATHS:
+		if normalized.find(forbidden.to_lower()) >= 0:
+			print("ERROR: Output path '%s' would overwrite protected path '%s'" % [output_path, forbidden])
+			return false
 	
 	return true
 

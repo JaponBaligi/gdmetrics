@@ -1,0 +1,20 @@
+; Engine Configuration File
+; This file is used for CI/testing purposes
+
+[application]
+
+config/name="GDScript Complexity Analyzer"
+run/main_scene=""
+config/features=PackedStringArray("4.2", "Forward Plus")
+
+[autoload]
+
+[display]
+
+window/size/viewport_width=1152
+window/size/viewport_height=648
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
+

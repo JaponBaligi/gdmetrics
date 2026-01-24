@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Godot
+      uses: godotengine/godot-ci@v3.3.0
+      with:
+        godot-version: "4.2"
+    
+    - name: Run CLI Analysis Test
+      run: |
+        godot --headless --script cli/ci_test.gd -- --project-path . --output ci_report.json
+    
+    - name: Validate JSON Output
+      run: |
+        python3 -c "import json, sys; json.load(open('ci_report.json')); print('JSON is valid')"
+    
+    - name: Check Report Structure
+      run: |
+        python3 cli/validate_report.py ci_report.json
+
