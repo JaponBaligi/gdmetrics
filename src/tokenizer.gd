@@ -309,10 +309,6 @@ func _parse_identifier(line: String, start: int, line_num: int, col: int) -> Dic
 	return {"token": token, "next_index": i, "next_column": col + value.length()}
 
 func _parse_annotation(line: String, start: int, line_num: int, col: int) -> Dictionary:
-	"""
-	Parse GDScript annotations like @tool, @export, @onready, etc.
-	Returns {found: bool, token: Token, next_index: int, next_column: int}
-	"""
 	var annotations = ["@tool", "@export", "@onready", "@export_group", "@export_category"]
 	
 	for annotation in annotations:
@@ -320,7 +316,7 @@ func _parse_annotation(line: String, start: int, line_num: int, col: int) -> Dic
 		if start + annotation_len <= line.length():
 			if line.substr(start, annotation_len) == annotation:
 				var next_pos = start + annotation_len
-				if next_pos >= line.length() or line[next_pos] in " \t\n":
+				if next_pos >= line.length() or line[next_pos] in " \t\n(":
 					var token = Token.new(TokenType.IDENTIFIER, annotation, line_num, col)
 					return {
 						"found": true,
