@@ -27,6 +27,7 @@ parse_errors.log
 test_output/
 test_results/
 *.test.json
+ci_report.json
 
 # Build artefacts
 bin/

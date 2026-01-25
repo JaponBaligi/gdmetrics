@@ -28,12 +28,14 @@ var default_weights: Dictionary = {
 
 var result: ConfidenceResult
 
-func calculate_confidence(tokens: Array, errors: Array, version_adapter: VersionAdapter = null) -> ConfidenceResult:
+func calculate_confidence(tokens: Array, errors: Array, version_adapter = null) -> ConfidenceResult:
 	result = ConfidenceResult.new()
 	
 	if tokens.is_empty():
 		result.score = 0.0
 		return result
+	
+	var TokenType = load("res://src/tokenizer.gd").TokenType
 	
 	var token_coverage = _calculate_token_coverage(tokens)
 	var indentation_consistency = _calculate_indentation_consistency(tokens)
@@ -67,6 +69,8 @@ func _calculate_token_coverage(tokens: Array) -> float:
 	if tokens.is_empty():
 		return 0.0
 	
+	var TokenType = load("res://src/tokenizer.gd").TokenType
+	
 	var total_chars = 0
 	var recognized_chars = 0
 	
@@ -74,7 +78,7 @@ func _calculate_token_coverage(tokens: Array) -> float:
 		var token_length = token.value.length()
 		total_chars += token_length
 		
-		if token.type != GDScriptTokenizer.TokenType.WHITESPACE:
+		if token.type != TokenType.WHITESPACE:
 			recognized_chars += token_length
 	
 	if total_chars == 0:
@@ -86,6 +90,8 @@ func _calculate_indentation_consistency(tokens: Array) -> float:
 	if tokens.is_empty():
 		return 1.0
 	
+	var TokenType = load("res://src/tokenizer.gd").TokenType
+	
 	var indent_levels: Array = []
 	var has_tabs = false
 	var has_spaces = false
@@ -94,7 +100,7 @@ func _calculate_indentation_consistency(tokens: Array) -> float:
 	var last_line = -1
 	
 	for token in tokens:
-		if token.type == GDScriptTokenizer.TokenType.WHITESPACE:
+		if token.type == TokenType.WHITESPACE:
 			if token.line != last_line:
 				total_lines += 1
 				last_line = token.line
@@ -143,6 +149,8 @@ func _calculate_block_balance(tokens: Array) -> float:
 	if tokens.is_empty():
 		return 1.0
 	
+	var TokenType = load("res://src/tokenizer.gd").TokenType
+	
 	var paren_depth = 0
 	var bracket_depth = 0
 	var brace_depth = 0
@@ -152,7 +160,7 @@ func _calculate_block_balance(tokens: Array) -> float:
 	var unbalanced = false
 	
 	for token in tokens:
-		if token.type == GDScriptTokenizer.TokenType.OPERATOR:
+		if token.type == TokenType.OPERATOR:
 			if token.value == "(":
 				paren_depth += 1
 				max_paren_depth = max(max_paren_depth, paren_depth)

@@ -164,7 +164,7 @@ func tokenize_line(line: String, line_number: int):
 				column = string_result.next_column
 			continue
 
-		if char.is_valid_integer() or (char == "." and i + 1 < line.length() and line[i + 1].is_valid_integer()):
+		if (char >= "0" and char <= "9") or (char == "." and i + 1 < line.length() and line[i + 1] >= "0" and line[i + 1] <= "9"):
 			var number_result = _parse_number(line, i, line_number, column)
 			tokens.append(number_result.token)
 			i = number_result.next_index
@@ -185,12 +185,21 @@ func tokenize_line(line: String, line_number: int):
 			column += 1
 			continue
 
-		if char.is_valid_identifier_char() or char == "_":
+		if (char >= "a" and char <= "z") or (char >= "A" and char <= "Z") or (char >= "0" and char <= "9") or char == "_":
 			var ident_result = _parse_identifier(line, i, line_number, column)
 			tokens.append(ident_result.token)
 			i = ident_result.next_index
 			column = ident_result.next_column
 			continue
+
+		if char == "@":
+			if i + 4 < line.length() and line.substr(i, 5) == "@tool":
+				var next_pos = i + 5
+				if next_pos >= line.length() or line[next_pos] in " \t\n":
+					tokens.append(Token.new(TokenType.IDENTIFIER, "@tool", line_number, column))
+					i = next_pos
+					column += 5
+					continue
 
 		errors.append("Line %d:%d: Unknown character '%s'" % [line_number, column, char])
 		i += 1
@@ -248,7 +257,7 @@ func _parse_number(line: String, start: int, line_num: int, col: int) -> Diction
 		value += "-"
 		i += 1
 	
-	while i < line.length() and line[i].is_valid_integer():
+	while i < line.length() and line[i] >= "0" and line[i] <= "9":
 		value += line[i]
 		i += 1
 	
@@ -256,7 +265,7 @@ func _parse_number(line: String, start: int, line_num: int, col: int) -> Diction
 		has_dot = true
 		value += "."
 		i += 1
-		while i < line.length() and line[i].is_valid_integer():
+		while i < line.length() and line[i] >= "0" and line[i] <= "9":
 			value += line[i]
 			i += 1
 
@@ -267,7 +276,7 @@ func _parse_number(line: String, start: int, line_num: int, col: int) -> Diction
 			value += line[i]
 			i += 1
 		var exp_start = i
-		while i < line.length() and line[i].is_valid_integer():
+		while i < line.length() and line[i] >= "0" and line[i] <= "9":
 			value += line[i]
 			i += 1
 		if i == exp_start:
@@ -288,11 +297,11 @@ func _parse_identifier(line: String, start: int, line_num: int, col: int) -> Dic
 	var i = start
 	var value = ""
 
-	if i < line.length() and (line[i].is_valid_identifier_char() or line[i] == "_"):
+	if i < line.length() and ((line[i] >= "a" and line[i] <= "z") or (line[i] >= "A" and line[i] <= "Z") or (line[i] >= "0" and line[i] <= "9") or line[i] == "_"):
 		value += line[i]
 		i += 1
 
-		while i < line.length() and (line[i].is_valid_identifier_char() or line[i].is_valid_integer() or line[i] == "_"):
+		while i < line.length() and ((line[i] >= "a" and line[i] <= "z") or (line[i] >= "A" and line[i] <= "Z") or (line[i] >= "0" and line[i] <= "9") or line[i] == "_"):
 			value += line[i]
 			i += 1
 

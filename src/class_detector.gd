@@ -37,6 +37,8 @@ func detect_classes(tokens: Array) -> Array:
 	if tokens.is_empty():
 		return []
 	
+	var TokenType = load("res://src/tokenizer.gd").TokenType
+	
 	var i = 0
 	var current_class: ClassInfo = null
 	var class_indent = -1
@@ -44,7 +46,7 @@ func detect_classes(tokens: Array) -> Array:
 	while i < tokens.size():
 		var token = tokens[i]
 
-		if token.type == GDScriptTokenizer.TokenType.WHITESPACE:
+		if token.type == TokenType.WHITESPACE:
 			var indent = _count_indent(token.value)
 
 			if current_class != null and indent >= 0 and indent <= class_indent:
@@ -55,11 +57,11 @@ func detect_classes(tokens: Array) -> Array:
 			i += 1
 			continue
 		
-		if token.type == GDScriptTokenizer.TokenType.COMMENT:
+		if token.type == TokenType.COMMENT:
 			i += 1
 			continue
 
-		if token.type == GDScriptTokenizer.TokenType.KEYWORD:
+		if token.type == TokenType.KEYWORD:
 			if token.value == "class_name":
 				var class_name_result = _parse_class_name_declaration(tokens, i)
 				if class_name_result.class_name != "":
@@ -104,6 +106,7 @@ func _get_line_indent(tokens: Array, token_index: int) -> int:
 	if token_index <= 0:
 		return 0
 	
+	var TokenType = load("res://src/tokenizer.gd").TokenType
 	var target_line = tokens[token_index].line
 	var i = token_index - 1
 	
@@ -111,7 +114,7 @@ func _get_line_indent(tokens: Array, token_index: int) -> int:
 		var token = tokens[i]
 		if token.line != target_line:
 			break
-		if token.type == GDScriptTokenizer.TokenType.WHITESPACE:
+		if token.type == TokenType.WHITESPACE:
 			return _count_indent(token.value)
 		i -= 1
 	
@@ -139,28 +142,30 @@ func _count_indent(whitespace: String) -> int:
 	return count
 
 func _parse_class_name_declaration(tokens: Array, start: int) -> Dictionary:
+	var TokenType = load("res://src/tokenizer.gd").TokenType
 	var i = start + 1
-	var class_name = ""
+	var name_value = ""
 	
-	while i < tokens.size() and tokens[i].type == GDScriptTokenizer.TokenType.WHITESPACE:
+	while i < tokens.size() and tokens[i].type == TokenType.WHITESPACE:
 		i += 1
 	
-	if i >= tokens.size() or tokens[i].type != GDScriptTokenizer.TokenType.IDENTIFIER:
+	if i >= tokens.size() or tokens[i].type != TokenType.IDENTIFIER:
 		return {"class_name": "", "next_index": start + 1}
 	
-	class_name = tokens[i].value
+	name_value = tokens[i].value
 	i += 1
 	
-	return {"class_name": class_name, "next_index": i}
+	return {"class_name": name_value, "next_index": i}
 
 func _parse_extends_declaration(tokens: Array, start: int) -> Dictionary:
+	var TokenType = load("res://src/tokenizer.gd").TokenType
 	var i = start + 1
 	var extends_class = ""
 	
-	while i < tokens.size() and tokens[i].type == GDScriptTokenizer.TokenType.WHITESPACE:
+	while i < tokens.size() and tokens[i].type == TokenType.WHITESPACE:
 		i += 1
 	
-	if i >= tokens.size() or tokens[i].type != GDScriptTokenizer.TokenType.IDENTIFIER:
+	if i >= tokens.size() or tokens[i].type != TokenType.IDENTIFIER:
 		return {"extends_class": "", "next_index": start + 1}
 	
 	extends_class = tokens[i].value
@@ -169,21 +174,22 @@ func _parse_extends_declaration(tokens: Array, start: int) -> Dictionary:
 	return {"extends_class": extends_class, "next_index": i}
 
 func _parse_class_declaration(tokens: Array, start: int) -> Dictionary:
+	var TokenType = load("res://src/tokenizer.gd").TokenType
 	var i = start + 1
-	var class_name = ""
+	var name_value = ""
 	
-	while i < tokens.size() and tokens[i].type == GDScriptTokenizer.TokenType.WHITESPACE:
+	while i < tokens.size() and tokens[i].type == TokenType.WHITESPACE:
 		i += 1
 	
-	if i >= tokens.size() or tokens[i].type != GDScriptTokenizer.TokenType.IDENTIFIER:
+	if i >= tokens.size() or tokens[i].type != TokenType.IDENTIFIER:
 		return {"class_info": null, "next_index": start + 1}
 	
-	class_name = tokens[i].value
+	name_value = tokens[i].value
 	var class_line = tokens[i].line
 	var class_col = tokens[i].column
 	i += 1
 	
-	var class_info = ClassInfo.new(class_name, class_line, class_col)
+	var class_info = ClassInfo.new(name_value, class_line, class_col)
 	
 	return {"class_info": class_info, "next_index": i}
 

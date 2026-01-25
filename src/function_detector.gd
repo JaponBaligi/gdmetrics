@@ -34,6 +34,8 @@ func detect_functions(tokens: Array) -> Array:
 	if tokens.is_empty():
 		return []
 	
+	var TokenType = load("res://src/tokenizer.gd").TokenType
+	
 	var i = 0
 	var current_function: FunctionInfo = null
 	var function_indent = -1
@@ -41,7 +43,7 @@ func detect_functions(tokens: Array) -> Array:
 	while i < tokens.size():
 		var token = tokens[i]
 
-		if token.type == GDScriptTokenizer.TokenType.WHITESPACE:
+		if token.type == TokenType.WHITESPACE:
 			var indent = _count_indent(token.value)
 
 			if current_function != null and indent >= 0 and indent <= function_indent:
@@ -52,11 +54,11 @@ func detect_functions(tokens: Array) -> Array:
 			i += 1
 			continue
 		
-		if token.type == GDScriptTokenizer.TokenType.COMMENT:
+		if token.type == TokenType.COMMENT:
 			i += 1
 			continue
 
-		if token.type == GDScriptTokenizer.TokenType.KEYWORD:
+		if token.type == TokenType.KEYWORD:
 			if token.value == "func" or token.value == "static":
 				var func_result = _parse_function_declaration(tokens, i)
 				if func_result.function != null:
@@ -95,6 +97,7 @@ func _get_line_indent(tokens: Array, token_index: int) -> int:
 	if token_index <= 0:
 		return 0
 	
+	var TokenType = load("res://src/tokenizer.gd").TokenType
 	var target_line = tokens[token_index].line
 	var i = token_index - 1
 	
@@ -102,7 +105,7 @@ func _get_line_indent(tokens: Array, token_index: int) -> int:
 		var token = tokens[i]
 		if token.line != target_line:
 			break
-		if token.type == GDScriptTokenizer.TokenType.WHITESPACE:
+		if token.type == TokenType.WHITESPACE:
 			return _count_indent(token.value)
 		i -= 1
 	
@@ -132,6 +135,7 @@ func _count_indent(whitespace: String) -> int:
 
 func _parse_function_declaration(tokens: Array, start: int) -> Dictionary:
 
+	var TokenType = load("res://src/tokenizer.gd").TokenType
 	var i = start
 	var func_type = "func"
 	var func_name = ""
@@ -141,7 +145,7 @@ func _parse_function_declaration(tokens: Array, start: int) -> Dictionary:
 	if tokens[i].value == "static":
 		func_type = "static_func"
 		i += 1
-		while i < tokens.size() and tokens[i].type == GDScriptTokenizer.TokenType.WHITESPACE:
+		while i < tokens.size() and tokens[i].type == TokenType.WHITESPACE:
 			i += 1
 	
 	if i >= tokens.size() or tokens[i].value != "func":
@@ -151,16 +155,16 @@ func _parse_function_declaration(tokens: Array, start: int) -> Dictionary:
 	var func_col = tokens[i].column
 	i += 1
 
-	while i < tokens.size() and tokens[i].type == GDScriptTokenizer.TokenType.WHITESPACE:
+	while i < tokens.size() and tokens[i].type == TokenType.WHITESPACE:
 		i += 1
 
-	if i >= tokens.size() or tokens[i].type != GDScriptTokenizer.TokenType.IDENTIFIER:
+	if i >= tokens.size() or tokens[i].type != TokenType.IDENTIFIER:
 		return {"function": null, "next_index": start + 1}
 	
 	func_name = tokens[i].value
 	i += 1
 
-	while i < tokens.size() and tokens[i].type == GDScriptTokenizer.TokenType.WHITESPACE:
+	while i < tokens.size() and tokens[i].type == TokenType.WHITESPACE:
 		i += 1
 
 	if i < tokens.size() and tokens[i].value == "(":
@@ -179,16 +183,16 @@ func _parse_function_declaration(tokens: Array, start: int) -> Dictionary:
 		
 		params.resize(param_count + 1)
 
-	while i < tokens.size() and tokens[i].type == GDScriptTokenizer.TokenType.WHITESPACE:
+	while i < tokens.size() and tokens[i].type == TokenType.WHITESPACE:
 		i += 1
 
 	if i < tokens.size() and tokens[i].value == "-":
 		i += 1
 		if i < tokens.size() and tokens[i].value == ">":
 			i += 1
-			while i < tokens.size() and tokens[i].type == GDScriptTokenizer.TokenType.WHITESPACE:
+			while i < tokens.size() and tokens[i].type == TokenType.WHITESPACE:
 				i += 1
-			if i < tokens.size() and tokens[i].type == GDScriptTokenizer.TokenType.IDENTIFIER:
+			if i < tokens.size() and tokens[i].type == TokenType.IDENTIFIER:
 				return_type = tokens[i].value
 				i += 1
 	
@@ -199,18 +203,19 @@ func _parse_function_declaration(tokens: Array, start: int) -> Dictionary:
 	return {"function": func_info, "next_index": i}
 
 func _parse_signal_declaration(tokens: Array, start: int) -> Dictionary:
+	var TokenType = load("res://src/tokenizer.gd").TokenType
 	var i = start + 1  # Skip "signal"
 	var signal_name = ""
-	while i < tokens.size() and tokens[i].type == GDScriptTokenizer.TokenType.WHITESPACE:
+	while i < tokens.size() and tokens[i].type == TokenType.WHITESPACE:
 		i += 1
-	if i >= tokens.size() or tokens[i].type != GDScriptTokenizer.TokenType.IDENTIFIER:
+	if i >= tokens.size() or tokens[i].type != TokenType.IDENTIFIER:
 		return {"function": null, "next_index": start + 1}
 	
 	signal_name = tokens[i].value
 	var signal_line = tokens[i].line
 	var signal_col = tokens[i].column
 	i += 1
-	while i < tokens.size() and tokens[i].type == GDScriptTokenizer.TokenType.WHITESPACE:
+	while i < tokens.size() and tokens[i].type == TokenType.WHITESPACE:
 		i += 1
 	var params: Array = []
 	if i < tokens.size() and tokens[i].value == "(":

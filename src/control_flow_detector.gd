@@ -23,9 +23,9 @@ class ControlFlowNode:
 var detected_nodes: Array = []
 var errors: Array = []
 var in_match_block: bool = false
-var version_adapter: VersionAdapter = null
+var version_adapter = null
 
-func detect_control_flow(tokens: Array, adapter: VersionAdapter = null) -> Array:
+func detect_control_flow(tokens: Array, adapter = null) -> Array:
 	detected_nodes.clear()
 	errors.clear()
 	in_match_block = false
@@ -33,6 +33,8 @@ func detect_control_flow(tokens: Array, adapter: VersionAdapter = null) -> Array
 	
 	if tokens.is_empty():
 		return []
+	
+	var TokenType = load("res://src/tokenizer.gd").TokenType
 	
 	var supports_match = true
 	if version_adapter != null:
@@ -46,13 +48,13 @@ func detect_control_flow(tokens: Array, adapter: VersionAdapter = null) -> Array
 	while i < tokens.size():
 		var token = tokens[i]
 		
-		if token.type == GDScriptTokenizer.TokenType.NEWLINE:
+		if token.type == TokenType.NEWLINE:
 			last_line = token.line
 			last_line_indent = 0
 			i += 1
 			continue
 		
-		if token.type == GDScriptTokenizer.TokenType.WHITESPACE:
+		if token.type == TokenType.WHITESPACE:
 			if token.line != last_line:
 				var indent = _count_indent(token.value)
 				if indent >= 0:
@@ -62,11 +64,11 @@ func detect_control_flow(tokens: Array, adapter: VersionAdapter = null) -> Array
 			i += 1
 			continue
 		
-		if token.type == GDScriptTokenizer.TokenType.COMMENT:
+		if token.type == TokenType.COMMENT:
 			i += 1
 			continue
 		
-		if token.type == GDScriptTokenizer.TokenType.KEYWORD:
+		if token.type == TokenType.KEYWORD:
 			var line_indent = _get_line_indent(tokens, i)
 			_update_indent_stack(indent_stack, line_indent)
 			var nesting_depth = indent_stack.size()
@@ -92,7 +94,7 @@ func detect_control_flow(tokens: Array, adapter: VersionAdapter = null) -> Array
 			elif token.value == "not":
 				detected_nodes.append(ControlFlowNode.new("not", token.line, token.column, nesting_depth))
 		
-		if token.type == GDScriptTokenizer.TokenType.OPERATOR and token.value == ":":
+		if token.type == TokenType.OPERATOR and token.value == ":":
 			if in_match_block:
 				pass
 		
@@ -104,6 +106,7 @@ func _get_line_indent(tokens: Array, token_index: int) -> int:
 	if token_index <= 0:
 		return 0
 	
+	var TokenType = load("res://src/tokenizer.gd").TokenType
 	var target_line = tokens[token_index].line
 	var i = token_index - 1
 	
@@ -111,7 +114,7 @@ func _get_line_indent(tokens: Array, token_index: int) -> int:
 		var token = tokens[i]
 		if token.line != target_line:
 			break
-		if token.type == GDScriptTokenizer.TokenType.WHITESPACE:
+		if token.type == TokenType.WHITESPACE:
 			return _count_indent(token.value)
 		i -= 1
 	

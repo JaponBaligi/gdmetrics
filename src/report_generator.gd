@@ -4,10 +4,10 @@ class_name ReportGenerator
 # JSON report generator 
 # generates JSON reports from analysis results
 
-func generate_report(project_result: BatchAnalyzer.ProjectResult, config: ConfigManager.Config) -> Dictionary:
+func generate_report(project_result, config) -> Dictionary:
 	var report = {
 		"version": "1.0",
-		"timestamp": OS.get_datetime_string_from_system(),
+		"timestamp": Time.get_datetime_string_from_system(),
 		"project": {
 			"total_files": project_result.total_files,
 			"successful_files": project_result.successful_files,
@@ -93,9 +93,6 @@ func _format_classes(classes: Array) -> Array:
 		})
 	return class_list
 
-extends RefCounted
-class_name ReportGenerator
-
 # JSON report generator 
 # generates JSON reports from analysis results
 
@@ -114,7 +111,7 @@ func write_report(report: Dictionary, output_path: String) -> bool:
 	if not _check_output_overwrite(output_path):
 		return false
 	
-	var json_string = to_json(report)
+	var json_string = JSON.stringify(report, "  ")
 	
 	var file = FileAccess.open(output_path, FileAccess.WRITE)
 	if file == null:
@@ -152,7 +149,7 @@ func _check_output_overwrite(output_path: String) -> bool:
 	
 	return true
 
-func generate_and_write(project_result: BatchAnalyzer.ProjectResult, config: ConfigManager.Config) -> bool:
+func generate_and_write(project_result, config) -> bool:
 	var report = generate_report(project_result, config)
 	var output_path = config.report_config["output_path"]
 	return write_report(report, output_path)
