@@ -1,5 +1,4 @@
-@tool
-extends RefCounted
+extends Reference
 class_name VersionAdapter
 
 # Handles version detection and feature flags

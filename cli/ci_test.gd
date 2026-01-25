@@ -19,7 +19,9 @@ func _initialize():
 	
 	var dash_index = args.find("--")
 	if dash_index >= 0:
-		var remaining_args = args.slice(dash_index + 1)
+		var remaining_args = []
+		for i in range(dash_index + 1, args.size()):
+			remaining_args.append(args[i])
 		var i = 0
 		while i < remaining_args.size():
 			var arg = remaining_args[i]
@@ -36,7 +38,7 @@ func _initialize():
 	call_deferred("quit", exit_code)
 
 func _sanitize_path(path: String) -> String:
-	if path.is_empty():
+	if path.length() == 0:
 		return "."
 	
 	var sanitized = path.replace("\\", "/")

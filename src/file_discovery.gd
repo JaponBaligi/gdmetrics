@@ -1,4 +1,4 @@
-extends RefCounted
+extends Reference
 class_name FileDiscovery
 
 # File discovery system
@@ -17,7 +17,7 @@ func find_files(root_path: String, include_patterns: Array, exclude_patterns: Ar
 	return files
 
 func _sanitize_path(path: String) -> String:
-	if path.is_empty():
+	if path.length() == 0:
 		return "."
 	
 	var sanitized = path.replace("\\", "/")
@@ -68,7 +68,7 @@ func _make_relative(root_path: String, full_path: String) -> String:
 	return full_path
 
 func _matches_patterns(file_path: String, include_patterns: Array, exclude_patterns: Array) -> bool:
-	if include_patterns.is_empty():
+	if include_patterns.size() == 0:
 		return false
 	
 	var matches_include = false

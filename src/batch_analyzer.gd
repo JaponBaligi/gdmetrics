@@ -1,4 +1,4 @@
-extends RefCounted
+extends Reference
 class_name BatchAnalyzer
 
 # Batch analyzer
@@ -43,7 +43,7 @@ func analyze_project(root_path: String, config, adapter = null) -> ProjectResult
 	
 	project_result.total_files = files.size()
 	
-	if files.is_empty():
+	if files.size() == 0:
 		project_result.errors.append("No files found matching include patterns")
 		return project_result
 	
@@ -93,7 +93,7 @@ func _analyze_file(file_path: String, config) -> FileResult:
 		result.success = false
 		return result
 	
-	if tokens.is_empty():
+	if tokens.size() == 0:
 		result.errors.append("No tokens found")
 		result.success = false
 		return result
@@ -136,8 +136,15 @@ func _calculate_worst_offenders(file_results: Array):
 			cc_sorted.append(result)
 			cog_sorted.append(result)
 	
-	cc_sorted.sort_custom(_compare_cc)
-	cog_sorted.sort_custom(_compare_cog)
+	var version_info = Engine.get_version_info()
+	var is_godot_3 = version_info.get("major", 0) == 3
+	
+	if is_godot_3:
+		cc_sorted.sort_custom(self, "_compare_cc")
+		cog_sorted.sort_custom(self, "_compare_cog")
+	else:
+		cc_sorted.sort_custom(self, "_compare_cc")
+		cog_sorted.sort_custom(self, "_compare_cog")
 	
 	project_result.worst_cc_files = cc_sorted.slice(0, min(10, cc_sorted.size()))
 	project_result.worst_cog_files = cog_sorted.slice(0, min(10, cog_sorted.size()))

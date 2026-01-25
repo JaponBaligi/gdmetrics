@@ -1,4 +1,4 @@
-extends RefCounted
+extends Reference
 class_name ConfigManager
 
 # Configuration manager
@@ -61,17 +61,32 @@ func load_config(config_file_path: String) -> bool:
 	errors.clear()
 	config_path = config_file_path
 	
-	if not FileAccess.file_exists(config_file_path):
-		errors.append("Config file not found: %s (using defaults)" % config_file_path)
-		return false
+	var version_info = Engine.get_version_info()
+	var is_godot_3 = version_info.get("major", 0) == 3
 	
-	var file = FileAccess.open(config_file_path, FileAccess.READ)
-	if file == null:
-		errors.append("Failed to open config file: %s (using defaults)" % config_file_path)
-		return false
+	var file = null
+	var json_text = ""
 	
-	var json_text = file.get_as_text()
-	file = null
+	if is_godot_3:
+		var file_check = File.new()
+		if not file_check.file_exists(config_file_path):
+			errors.append("Config file not found: %s (using defaults)" % config_file_path)
+			return false
+		file_check = null
+		
+		file = File.new()
+		var err = file.open(config_file_path, File.READ)
+		if err != OK:
+			errors.append("Failed to open config file: %s (using defaults)" % config_file_path)
+			return false
+		
+		json_text = file.get_as_text()
+		file.close()
+	else:
+		# Godot 4.x - config file loading skipped in 3.x due to FileAccess API differences
+		# Use defaults instead
+		errors.append("Config file loading not supported in Godot 3.x (using defaults)")
+		return false
 	
 	var json = JSON.new()
 	var parse_result = json.parse(json_text)
