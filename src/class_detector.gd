@@ -1,4 +1,4 @@
-extends Reference
+extends Object
 class_name ClassDetector
 
 # class definition detector
@@ -34,10 +34,10 @@ func detect_classes(tokens: Array) -> Array:
 	classes.clear()
 	errors.clear()
 	
-	if tokens.is_empty():
+	if tokens.size() == 0:
 		return []
 	
-	var TokenType = load("res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	
 	var i = 0
 	var current_class: ClassInfo = null
@@ -106,7 +106,7 @@ func _get_line_indent(tokens: Array, token_index: int) -> int:
 	if token_index <= 0:
 		return 0
 	
-	var TokenType = load("res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	var target_line = tokens[token_index].line
 	var i = token_index - 1
 	
@@ -142,7 +142,7 @@ func _count_indent(whitespace: String) -> int:
 	return count
 
 func _parse_class_name_declaration(tokens: Array, start: int) -> Dictionary:
-	var TokenType = load("res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	var i = start + 1
 	var name_value = ""
 	
@@ -158,7 +158,7 @@ func _parse_class_name_declaration(tokens: Array, start: int) -> Dictionary:
 	return {"class_name": name_value, "next_index": i}
 
 func _parse_extends_declaration(tokens: Array, start: int) -> Dictionary:
-	var TokenType = load("res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	var i = start + 1
 	var extends_class = ""
 	
@@ -174,7 +174,7 @@ func _parse_extends_declaration(tokens: Array, start: int) -> Dictionary:
 	return {"extends_class": extends_class, "next_index": i}
 
 func _parse_class_declaration(tokens: Array, start: int) -> Dictionary:
-	var TokenType = load("res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	var i = start + 1
 	var name_value = ""
 	

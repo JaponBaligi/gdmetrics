@@ -1,4 +1,4 @@
-extends Reference
+extends Object
 class_name BatchAnalyzer
 
 # Batch analyzer
@@ -38,7 +38,8 @@ func analyze_project(root_path: String, config, adapter = null) -> ProjectResult
 	project_result = ProjectResult.new()
 	version_adapter = adapter
 	
-	var discovery = load("res://src/file_discovery.gd").new()
+	var discovery_script = "res://src/file_discovery_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/file_discovery_4.gd"
+	var discovery = load(discovery_script).new()
 	var files = discovery.find_files(root_path, config.include_patterns, config.exclude_patterns)
 	
 	project_result.total_files = files.size()
@@ -80,11 +81,16 @@ func analyze_project(root_path: String, config, adapter = null) -> ProjectResult
 	
 	return project_result
 
+func _get_tokenizer_script() -> String:
+	var version_info = Engine.get_version_info()
+	var is_godot_3 = version_info.get("major", 0) == 3
+	return "res://src/tokenizer_3.gd" if is_godot_3 else "res://src/tokenizer.gd"
+
 func _analyze_file(file_path: String, config) -> FileResult:
 	var result = FileResult.new()
 	result.file_path = file_path
 	
-	var tokenizer = load("res://src/tokenizer.gd").new()
+	var tokenizer = load(_get_tokenizer_script()).new()
 	var tokens = tokenizer.tokenize_file(file_path)
 	var tokenizer_errors = tokenizer.get_errors()
 	
@@ -136,24 +142,43 @@ func _calculate_worst_offenders(file_results: Array):
 			cc_sorted.append(result)
 			cog_sorted.append(result)
 	
-	var version_info = Engine.get_version_info()
-	var is_godot_3 = version_info.get("major", 0) == 3
-	
-	if is_godot_3:
-		cc_sorted.sort_custom(self, "_compare_cc")
-		cog_sorted.sort_custom(self, "_compare_cog")
-	else:
-		cc_sorted.sort_custom(self, "_compare_cc")
-		cog_sorted.sort_custom(self, "_compare_cog")
+	_sort_by_cc(cc_sorted)
+	_sort_by_cog(cog_sorted)
 	
 	project_result.worst_cc_files = cc_sorted.slice(0, min(10, cc_sorted.size()))
 	project_result.worst_cog_files = cog_sorted.slice(0, min(10, cog_sorted.size()))
 
-func _compare_cc(a: FileResult, b: FileResult) -> bool:
-	return a.cc > b.cc
+func _sort_by_cc(arr: Array):
+	var n = arr.size()
+	var i = 0
+	while i < n:
+		var best = i
+		var j = i + 1
+		while j < n:
+			if arr[j].cc > arr[best].cc:
+				best = j
+			j += 1
+		if best != i:
+			var tmp = arr[i]
+			arr[i] = arr[best]
+			arr[best] = tmp
+		i += 1
 
-func _compare_cog(a: FileResult, b: FileResult) -> bool:
-	return a.cog > b.cog
+func _sort_by_cog(arr: Array):
+	var n = arr.size()
+	var i = 0
+	while i < n:
+		var best = i
+		var j = i + 1
+		while j < n:
+			if arr[j].cog > arr[best].cog:
+				best = j
+			j += 1
+		if best != i:
+			var tmp = arr[i]
+			arr[i] = arr[best]
+			arr[best] = tmp
+		i += 1
 
 func get_project_result() -> ProjectResult:
 	return project_result

@@ -1,8 +1,15 @@
-extends Reference
-class_name ReportGenerator
+extends Object
 
-# JSON report generator 
-# generates JSON reports from analysis results
+# Report generator for Godot 4.x (JSON.stringify, FileAccess)
+
+var FORBIDDEN_OUTPUT_PATHS = [
+	"project.godot",
+	".git",
+	"src/",
+	"cli/",
+	"docs/",
+	".github/"
+]
 
 func generate_report(project_result, config) -> Dictionary:
 	var report = {
@@ -29,7 +36,6 @@ func generate_report(project_result, config) -> Dictionary:
 		"files": _format_file_results(project_result.file_results),
 		"errors": project_result.errors
 	}
-	
 	return report
 
 func _format_worst_offenders(file_results: Array, metric: String) -> Array:
@@ -57,11 +63,9 @@ func _format_file_results(file_results: Array) -> Array:
 			"cog_breakdown": result.cog_breakdown,
 			"errors": result.errors
 		}
-		
 		if result.success:
 			file_data["functions"] = _format_functions(result.functions, result.per_function_cog)
 			file_data["classes"] = _format_classes(result.classes)
-		
 		files.append(file_data)
 	return files
 
@@ -93,64 +97,39 @@ func _format_classes(classes: Array) -> Array:
 		})
 	return class_list
 
-# JSON report generator 
-# generates JSON reports from analysis results
-
-var FORBIDDEN_OUTPUT_PATHS = [
-	"project.godot",
-	".git",
-	"src/",
-	"cli/",
-	"docs/",
-	".github/"
-]
-
 func write_report(report: Dictionary, output_path: String) -> bool:
 	output_path = _sanitize_path(output_path)
-	
 	if not _check_output_overwrite(output_path):
 		return false
-	
 	var json_string = JSON.stringify(report, "  ")
-	
 	var file = FileAccess.open(output_path, FileAccess.WRITE)
 	if file == null:
 		return false
-	
 	file.store_string(json_string)
 	file = null
-	
 	return true
 
 func _sanitize_path(path: String) -> String:
-	if path.is_empty():
+	if path.length() == 0:
 		return "complexity_report.json"
-	
 	var sanitized = path.replace("\\", "/")
-
 	while sanitized.find("../") >= 0:
 		sanitized = sanitized.replace("../", "")
-
 	while sanitized.begins_with("/"):
 		sanitized = sanitized.substr(1)
-
 	if sanitized.begins_with("res://"):
 		sanitized = sanitized.substr(6)
-	
 	return sanitized
 
 func _check_output_overwrite(output_path: String) -> bool:
 	var normalized = output_path.replace("\\", "/").to_lower()
-	
 	for forbidden in FORBIDDEN_OUTPUT_PATHS:
 		if normalized.find(forbidden.to_lower()) >= 0:
 			print("ERROR: Output path '%s' would overwrite protected path '%s'" % [output_path, forbidden])
 			return false
-	
 	return true
 
 func generate_and_write(project_result, config) -> bool:
 	var report = generate_report(project_result, config)
 	var output_path = config.report_config["output_path"]
 	return write_report(report, output_path)
-

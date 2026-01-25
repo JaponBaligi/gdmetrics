@@ -34,7 +34,8 @@ func start_analysis(root_path: String, config_data: ConfigManager.Config, adapte
 	batch_analyzer = preload("res://src/batch_analyzer.gd").new()
 	batch_analyzer.version_adapter = version_adapter
 	
-	var discovery = preload("res://src/file_discovery.gd").new()
+	var discovery_script = "res://src/file_discovery_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/file_discovery_4.gd"
+	var discovery = load(discovery_script).new()
 	files = discovery.find_files(root_path, config.include_patterns, config.exclude_patterns)
 	
 	if files.is_empty():
@@ -86,7 +87,8 @@ func _analyze_file(file_path: String) -> BatchAnalyzer.FileResult:
 	var result = BatchAnalyzer.FileResult.new()
 	result.file_path = file_path
 	
-	var tokenizer = preload("res://src/tokenizer.gd").new()
+	var tokenizer_script = "res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+	var tokenizer = load(tokenizer_script).new()
 	var tokens = tokenizer.tokenize_file(file_path)
 	var tokenizer_errors = tokenizer.get_errors()
 	
@@ -95,7 +97,7 @@ func _analyze_file(file_path: String) -> BatchAnalyzer.FileResult:
 		result.success = false
 		return result
 	
-	if tokens.is_empty():
+	if tokens.size() == 0:
 		result.errors.append("No tokens found")
 		result.success = false
 		return result

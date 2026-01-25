@@ -97,8 +97,16 @@ func run_analysis(project_path: String, output_path: String) -> int:
 		print("ERROR: No files successfully analyzed")
 		return 1
 	
-	var report_gen = load("res://src/report_generator.gd").new()
+	var report_gen_script = "res://src/report_generator_3.gd" if version_adapter.is_godot_3 else "res://src/report_generator_4.gd"
+	var report_gen = load(report_gen_script).new()
 	var report = report_gen.generate_report(project_result, default_config)
+	
+	# Godot 3.5 can crash occasionally. Write to user:// first so the report survives.
+	if version_adapter.is_godot_3:
+		var fallback = "user://ci_report_fallback.json"
+		if report_gen.write_report(report, fallback):
+			print("Report fallback (if 3.5 crashes): %s" % fallback)
+			print("  -> %s" % OS.get_user_data_dir())
 	
 	if not report_gen.write_report(report, output_path):
 		print("ERROR: Failed to write report")
@@ -109,6 +117,15 @@ func run_analysis(project_path: String, output_path: String) -> int:
 	print("Total C-COG: %d" % project_result.total_cog)
 	print("Average CC: %.2f" % project_result.average_cc)
 	print("Average C-COG: %.2f" % project_result.average_cog)
+	
+	# Release references before quit. Exit may still show "ObjectDB leaked" / "Resources still
+	# in use" from loaded scripts; those are harmless. See docs/before5.md.
+	report_gen = null
+	batch_analyzer = null
+	version_adapter = null
+	config = null
+	default_config = null
+	project_result = null
 	
 	return 0
 

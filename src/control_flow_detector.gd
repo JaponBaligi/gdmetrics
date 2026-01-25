@@ -1,4 +1,4 @@
-extends Reference
+extends Object
 class_name ControlFlowDetector
 
 # Control flow detector 
@@ -31,10 +31,10 @@ func detect_control_flow(tokens: Array, adapter = null) -> Array:
 	in_match_block = false
 	version_adapter = adapter
 	
-	if tokens.is_empty():
+	if tokens.size() == 0:
 		return []
 	
-	var TokenType = load("res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	
 	var supports_match = true
 	if version_adapter != null:
@@ -106,7 +106,7 @@ func _get_line_indent(tokens: Array, token_index: int) -> int:
 	if token_index <= 0:
 		return 0
 	
-	var TokenType = load("res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	var target_line = tokens[token_index].line
 	var i = token_index - 1
 	

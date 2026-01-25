@@ -1,4 +1,4 @@
-extends Reference
+extends Object
 class_name ConfidenceCalculator
 
 # confidence score calculator
@@ -31,11 +31,11 @@ var result: ConfidenceResult
 func calculate_confidence(tokens: Array, errors: Array, version_adapter = null) -> ConfidenceResult:
 	result = ConfidenceResult.new()
 	
-	if tokens.is_empty():
+	if tokens.size() == 0:
 		result.score = 0.0
 		return result
 	
-	var TokenType = load("res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	
 	var token_coverage = _calculate_token_coverage(tokens)
 	var indentation_consistency = _calculate_indentation_consistency(tokens)
@@ -66,10 +66,10 @@ func calculate_confidence(tokens: Array, errors: Array, version_adapter = null) 
 	return result
 
 func _calculate_token_coverage(tokens: Array) -> float:
-	if tokens.is_empty():
+	if tokens.size() == 0:
 		return 0.0
 	
-	var TokenType = load("res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	
 	var total_chars = 0
 	var recognized_chars = 0
@@ -87,10 +87,10 @@ func _calculate_token_coverage(tokens: Array) -> float:
 	return float(recognized_chars) / float(total_chars)
 
 func _calculate_indentation_consistency(tokens: Array) -> float:
-	if tokens.is_empty():
+	if tokens.size() == 0:
 		return 1.0
 	
-	var TokenType = load("res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	
 	var indent_levels: Array = []
 	var has_tabs = false
@@ -133,7 +133,7 @@ func _calculate_indentation_consistency(tokens: Array) -> float:
 	return max(0.0, consistency)
 
 func _count_indent(whitespace: String) -> int:
-	if whitespace.is_empty():
+	if whitespace.length() == 0:
 		return 0
 	
 	var count = 0
@@ -146,10 +146,10 @@ func _count_indent(whitespace: String) -> int:
 	return count
 
 func _calculate_block_balance(tokens: Array) -> float:
-	if tokens.is_empty():
+	if tokens.size() == 0:
 		return 1.0
 	
-	var TokenType = load("res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	
 	var paren_depth = 0
 	var bracket_depth = 0

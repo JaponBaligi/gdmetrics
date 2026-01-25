@@ -1,4 +1,4 @@
-extends Reference
+extends Object
 class_name ConfigManager
 
 # Configuration manager
@@ -51,9 +51,16 @@ class Config:
 var config: Config
 var config_path: String = ""
 var errors: Array = []
+var _file_helper = null
 
 func _init(config_file_path: String = ""):
 	config = Config.new()
+	var version_info = Engine.get_version_info()
+	var is_godot_3 = version_info.get("major", 0) == 3
+	if is_godot_3:
+		_file_helper = load("res://src/file_helper_3.gd").new()
+	else:
+		_file_helper = load("res://src/file_helper_4.gd").new()
 	if config_file_path != "":
 		load_config(config_file_path)
 
@@ -61,32 +68,17 @@ func load_config(config_file_path: String) -> bool:
 	errors.clear()
 	config_path = config_file_path
 	
-	var version_info = Engine.get_version_info()
-	var is_godot_3 = version_info.get("major", 0) == 3
-	
-	var file = null
-	var json_text = ""
-	
-	if is_godot_3:
-		var file_check = File.new()
-		if not file_check.file_exists(config_file_path):
-			errors.append("Config file not found: %s (using defaults)" % config_file_path)
-			return false
-		file_check = null
-		
-		file = File.new()
-		var err = file.open(config_file_path, File.READ)
-		if err != OK:
-			errors.append("Failed to open config file: %s (using defaults)" % config_file_path)
-			return false
-		
-		json_text = file.get_as_text()
-		file.close()
-	else:
-		# Godot 4.x - config file loading skipped in 3.x due to FileAccess API differences
-		# Use defaults instead
-		errors.append("Config file loading not supported in Godot 3.x (using defaults)")
+	if not _file_helper.file_exists(config_file_path):
+		errors.append("Config file not found: %s (using defaults)" % config_file_path)
 		return false
+	
+	var f = _file_helper.open_read(config_file_path)
+	if f == null:
+		errors.append("Failed to open config file: %s (using defaults)" % config_file_path)
+		return false
+	
+	var json_text = f.get_as_text()
+	_file_helper.close_file(f)
 	
 	var json = JSON.new()
 	var parse_result = json.parse(json_text)
