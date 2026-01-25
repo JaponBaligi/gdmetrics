@@ -193,13 +193,12 @@ func tokenize_line(line: String, line_number: int):
 			continue
 
 		if char == "@":
-			if i + 4 < line.length() and line.substr(i, 5) == "@tool":
-				var next_pos = i + 5
-				if next_pos >= line.length() or line[next_pos] in " \t\n":
-					tokens.append(Token.new(TokenType.IDENTIFIER, "@tool", line_number, column))
-					i = next_pos
-					column += 5
-					continue
+			var annotation_result = _parse_annotation(line, i, line_number, column)
+			if annotation_result.found:
+				tokens.append(annotation_result.token)
+				i = annotation_result.next_index
+				column = annotation_result.next_column
+				continue
 
 		errors.append("Line %d:%d: Unknown character '%s'" % [line_number, column, char])
 		i += 1
@@ -308,6 +307,29 @@ func _parse_identifier(line: String, start: int, line_num: int, col: int) -> Dic
 	var token_type = TokenType.KEYWORD if value in KEYWORDS else TokenType.IDENTIFIER
 	var token = Token.new(token_type, value, line_num, col)
 	return {"token": token, "next_index": i, "next_column": col + value.length()}
+
+func _parse_annotation(line: String, start: int, line_num: int, col: int) -> Dictionary:
+	"""
+	Parse GDScript annotations like @tool, @export, @onready, etc.
+	Returns {found: bool, token: Token, next_index: int, next_column: int}
+	"""
+	var annotations = ["@tool", "@export", "@onready", "@export_group", "@export_category"]
+	
+	for annotation in annotations:
+		var annotation_len = annotation.length()
+		if start + annotation_len <= line.length():
+			if line.substr(start, annotation_len) == annotation:
+				var next_pos = start + annotation_len
+				if next_pos >= line.length() or line[next_pos] in " \t\n":
+					var token = Token.new(TokenType.IDENTIFIER, annotation, line_num, col)
+					return {
+						"found": true,
+						"token": token,
+						"next_index": next_pos,
+						"next_column": col + annotation_len
+					}
+	
+	return {"found": false, "token": null, "next_index": start, "next_column": col}
 
 func get_errors() -> Array:
 	return errors.duplicate()
