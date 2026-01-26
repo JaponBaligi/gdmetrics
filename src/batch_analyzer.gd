@@ -1,5 +1,5 @@
 extends Object
-class_name BatchAnalyzer
+# class_name BatchAnalyzer  # Commented out to avoid parse-time cascade
 
 # Batch analyzer
 # processes multiple files and aggregates results
@@ -31,10 +31,10 @@ class ProjectResult:
 	var file_results: Array = []
 	var errors: Array = []
 
-var project_result: ProjectResult
+var project_result = null  # ProjectResult - nested class
 var version_adapter = null
 
-func analyze_project(root_path: String, config, adapter = null) -> ProjectResult:
+func analyze_project(root_path: String, config, adapter = null):  # -> ProjectResult - nested class
 	project_result = ProjectResult.new()
 	version_adapter = adapter
 	
@@ -86,7 +86,7 @@ func _get_tokenizer_script() -> String:
 	var is_godot_3 = version_info.get("major", 0) == 3
 	return "res://src/gd3/tokenizer.gd" if is_godot_3 else "res://src/tokenizer.gd"
 
-func _analyze_file(file_path: String, config) -> FileResult:
+func _analyze_file(file_path: String, config):  # -> FileResult - nested class
 	var result = FileResult.new()
 	result.file_path = file_path
 	
@@ -180,6 +180,13 @@ func _sort_by_cog(arr: Array):
 			arr[best] = tmp
 		i += 1
 
-func get_project_result() -> ProjectResult:
+func get_project_result():  # -> ProjectResult - nested class
 	return project_result
+
+# Helper methods to create nested class instances when class_name is commented out
+static func create_file_result():  # -> FileResult - nested class
+	return FileResult.new()
+
+static func create_project_result():  # -> ProjectResult - nested class
+	return ProjectResult.new()
 

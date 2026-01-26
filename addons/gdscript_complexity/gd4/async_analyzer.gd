@@ -1,12 +1,12 @@
 @tool
 extends RefCounted
-class_name AsyncAnalyzer
+# class_name AsyncAnalyzer  # Commented out to avoid parse-time cascade
 
 # Processes files in batches without blocking UI
 
 signal progress_updated(current: int, total: int, file_path: String)
-signal file_analyzed(file_result: BatchAnalyzer.FileResult)
-signal analysis_complete(project_result: BatchAnalyzer.ProjectResult)
+signal file_analyzed(file_result)  # BatchAnalyzer.FileResult - loaded dynamically
+signal analysis_complete(project_result)  # BatchAnalyzer.ProjectResult - loaded dynamically
 signal analysis_cancelled()
 
 var batch_size: int = 10
@@ -14,14 +14,14 @@ var update_interval: float = 0.1
 var cancelled: bool = false
 var is_running: bool = false
 
-var batch_analyzer: BatchAnalyzer = null
+var batch_analyzer = null  # BatchAnalyzer - loaded dynamically
 var files: Array = []
 var current_index: int = 0
-var project_result: BatchAnalyzer.ProjectResult = null
-var config: ConfigManager.Config = null
-var version_adapter: VersionAdapter = null
+var project_result = null  # BatchAnalyzer.ProjectResult - loaded dynamically
+var config = null  # ConfigManager.Config - loaded dynamically
+var version_adapter = null  # VersionAdapter - loaded dynamically
 
-func start_analysis(root_path: String, config_data: ConfigManager.Config, adapter: VersionAdapter = null):
+func start_analysis(root_path: String, config_data, adapter = null):  # ConfigManager.Config, VersionAdapter - loaded dynamically
 	if is_running:
 		return
 	
@@ -31,7 +31,7 @@ func start_analysis(root_path: String, config_data: ConfigManager.Config, adapte
 	
 	config = config_data
 	version_adapter = adapter
-	batch_analyzer = preload("res://src/batch_analyzer.gd").new()
+	batch_analyzer = load("res://src/batch_analyzer.gd").new()
 	batch_analyzer.version_adapter = version_adapter
 	
 	var discovery_script = "res://src/gd3/file_discovery.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/gd4/file_discovery.gd"
@@ -42,7 +42,9 @@ func start_analysis(root_path: String, config_data: ConfigManager.Config, adapte
 		is_running = false
 		return
 	
-	project_result = BatchAnalyzer.ProjectResult.new()
+	# Create ProjectResult using helper method
+	var batch_script = load("res://src/batch_analyzer.gd")
+	project_result = batch_script.create_project_result()
 	project_result.total_files = files.size()
 	project_result.file_results = []
 	
@@ -83,8 +85,10 @@ func _process_next_batch():
 	else:
 		call_deferred("_process_next_batch")
 
-func _analyze_file(file_path: String) -> BatchAnalyzer.FileResult:
-	var result = BatchAnalyzer.FileResult.new()
+func _analyze_file(file_path: String):  # -> BatchAnalyzer.FileResult - loaded dynamically
+	# Create FileResult using helper method
+	var batch_script = load("res://src/batch_analyzer.gd")
+	var result = batch_script.create_file_result()
 	result.file_path = file_path
 	
 	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
@@ -159,10 +163,10 @@ func _calculate_worst_offenders():
 	project_result.worst_cc_files = cc_sorted.slice(0, min(10, cc_sorted.size()))
 	project_result.worst_cog_files = cog_sorted.slice(0, min(10, cog_sorted.size()))
 
-func _compare_cc(a: BatchAnalyzer.FileResult, b: BatchAnalyzer.FileResult) -> bool:
+func _compare_cc(a, b) -> bool:  # BatchAnalyzer.FileResult - loaded dynamically
 	return a.cc > b.cc
 
-func _compare_cog(a: BatchAnalyzer.FileResult, b: BatchAnalyzer.FileResult) -> bool:
+func _compare_cog(a, b) -> bool:  # BatchAnalyzer.FileResult - loaded dynamically
 	return a.cog > b.cog
 
 func cancel():
