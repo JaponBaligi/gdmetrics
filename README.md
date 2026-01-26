@@ -95,7 +95,8 @@ Create a `complexity_config.json` file in your project root (or refactor `comple
   "report": {
     "formats": ["json", "csv"],
     "output_path": "res://complexity_report.json",
-    "csv_output_path": "res://complexity_report.csv"
+    "csv_output_path": "res://complexity_report.csv",
+    "auto_export": false
   },
   "performance": {
     "enable_caching": true,
@@ -116,6 +117,10 @@ The analyzer includes a content-based caching system to speed up subsequent anal
 - **Disableable**: Set `"enable_caching": false` in the `performance` section to disable
 
 Cache is stored in `.gdcomplexity_cache/` by default (configurable via `cache_path`).
+
+### Auto Export
+
+Set `"report.auto_export": true` to automatically write reports after analysis. Formats are controlled by `"report.formats"` (e.g., `["json", "csv"]`).
 
 ## Supported Versions
 
@@ -195,6 +200,12 @@ godot --headless --script tests/test_confidence_calculator.gd
 
 # Verify fixtures
 godot --headless --script tests/verify_cc_cog.gd
+
+# CSV export
+godot --headless --script cli/test_csv_export.gd
+
+# Advanced C-COG rules
+godot --headless --script cli/test_cog_advanced.gd
 ```
 
 ## Known Limitations

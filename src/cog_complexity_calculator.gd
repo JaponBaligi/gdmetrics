@@ -20,7 +20,11 @@ class CogComplexityResult:
 			"case": 0,
 			"and": 0,
 			"or": 0,
-			"not": 0
+			"not": 0,
+			"return": 0,
+			"break": 0,
+			"continue": 0,
+			"lambda": 0
 		}
 
 var result: CogComplexityResult
@@ -38,47 +42,7 @@ func calculate_cog(control_flow_nodes: Array, functions: Array = []) -> CogCompl
 	var i = 0
 	while i < control_flow_nodes.size():
 		var node = control_flow_nodes[i]
-		
-		if node.type == "match":
-			in_match_block = true
-			match_start_line = node.line
-			var contribution = 1 + node.depth
-			result.total_cog += contribution
-			result.breakdown["match"] += contribution
-		elif node.type == "case":
-			if in_match_block:
-				var contribution = 1
-				result.total_cog += contribution
-				result.breakdown["case"] += contribution
-		elif node.type == "if":
-			var contribution = 1 + node.depth
-			result.total_cog += contribution
-			result.breakdown["if"] += contribution
-		elif node.type == "elif":
-			var contribution = 1 + node.depth
-			result.total_cog += contribution
-			result.breakdown["elif"] += contribution
-		elif node.type == "for":
-			var contribution = 1 + node.depth
-			result.total_cog += contribution
-			result.breakdown["for"] += contribution
-		elif node.type == "while":
-			var contribution = 1 + node.depth
-			result.total_cog += contribution
-			result.breakdown["while"] += contribution
-		elif node.type == "and":
-			var contribution = 1 + node.depth
-			result.total_cog += contribution
-			result.breakdown["and"] += contribution
-		elif node.type == "or":
-			var contribution = 1 + node.depth
-			result.total_cog += contribution
-			result.breakdown["or"] += contribution
-		elif node.type == "not":
-			var contribution = 1 + node.depth
-			result.total_cog += contribution
-			result.breakdown["not"] += contribution
-		
+		_apply_node(node, result, true)
 		i += 1
 	
 	if functions.size() > 0:
@@ -98,47 +62,77 @@ func _calculate_per_function(control_flow_nodes: Array, functions: Array):
 		match_start_line = -1
 		
 		for node in func_nodes:
-			if node.type == "match":
-				in_match_block = true
-				match_start_line = node.line
-				var contribution = 1 + node.depth
-				func_result.total_cog += contribution
-				func_result.breakdown["match"] += contribution
-			elif node.type == "case":
-				if in_match_block:
-					var contribution = 1
-					func_result.total_cog += contribution
-					func_result.breakdown["case"] += contribution
-			elif node.type == "if":
-				var contribution = 1 + node.depth
-				func_result.total_cog += contribution
-				func_result.breakdown["if"] += contribution
-			elif node.type == "elif":
-				var contribution = 1 + node.depth
-				func_result.total_cog += contribution
-				func_result.breakdown["elif"] += contribution
-			elif node.type == "for":
-				var contribution = 1 + node.depth
-				func_result.total_cog += contribution
-				func_result.breakdown["for"] += contribution
-			elif node.type == "while":
-				var contribution = 1 + node.depth
-				func_result.total_cog += contribution
-				func_result.breakdown["while"] += contribution
-			elif node.type == "and":
-				var contribution = 1 + node.depth
-				func_result.total_cog += contribution
-				func_result.breakdown["and"] += contribution
-			elif node.type == "or":
-				var contribution = 1 + node.depth
-				func_result.total_cog += contribution
-				func_result.breakdown["or"] += contribution
-			elif node.type == "not":
-				var contribution = 1 + node.depth
-				func_result.total_cog += contribution
-				func_result.breakdown["not"] += contribution
+			_apply_node(node, func_result, true)
 		
 		result.per_function[func_info.name] = func_result.total_cog
+
+func _apply_node(node, target_result: CogComplexityResult, allow_match_tracking: bool):
+	# Lambda scope: nodes inside lambdas do not contribute to parent scope
+	if node.lambda_depth > 0:
+		return
+	
+	if node.type == "lambda":
+		# Treat lambda as a new cognitive scope without leaking its contents.
+		# Count a flat +1 to reflect scope creation without adding nesting.
+		target_result.total_cog += 1
+		target_result.breakdown["lambda"] += 1
+		return
+	
+	if node.type == "match":
+		if allow_match_tracking:
+			in_match_block = true
+			match_start_line = node.line
+		var contribution = 1 + node.depth
+		target_result.total_cog += contribution
+		target_result.breakdown["match"] += contribution
+		return
+	
+	if node.type == "case":
+		if allow_match_tracking and not in_match_block:
+			return
+		var patterns = 1
+		var has_guard = false
+		patterns = max(1, int(node.case_pattern_count))
+		has_guard = node.case_has_guard
+		var contribution = 1 + max(0, patterns - 1) + (1 if has_guard else 0)
+		target_result.total_cog += contribution
+		target_result.breakdown["case"] += contribution
+		return
+	
+	if node.type == "return" or node.type == "break" or node.type == "continue":
+		if node.in_control_flow:
+			target_result.total_cog += 1
+			target_result.breakdown[node.type] += 1
+		return
+	
+	if node.type == "if":
+		var contribution = 1 + node.depth
+		target_result.total_cog += contribution
+		target_result.breakdown["if"] += contribution
+	elif node.type == "elif":
+		var contribution = 1 + node.depth
+		target_result.total_cog += contribution
+		target_result.breakdown["elif"] += contribution
+	elif node.type == "for":
+		var contribution = 1 + node.depth
+		target_result.total_cog += contribution
+		target_result.breakdown["for"] += contribution
+	elif node.type == "while":
+		var contribution = 1 + node.depth
+		target_result.total_cog += contribution
+		target_result.breakdown["while"] += contribution
+	elif node.type == "and":
+		var contribution = 1 + node.depth
+		target_result.total_cog += contribution
+		target_result.breakdown["and"] += contribution
+	elif node.type == "or":
+		var contribution = 1 + node.depth
+		target_result.total_cog += contribution
+		target_result.breakdown["or"] += contribution
+	elif node.type == "not":
+		var contribution = 1 + node.depth
+		target_result.total_cog += contribution
+		target_result.breakdown["not"] += contribution
 
 func get_total_cog() -> int:
 	if result == null:

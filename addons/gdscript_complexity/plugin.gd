@@ -296,6 +296,11 @@ func _finalize_analysis(project_result):
 		dock_panel.set_analyze_button_enabled(true)
 		dock_panel.set_cancel_button_enabled(false)
 		print("[Plugin] Analysis finalized successfully")
+	
+	if config_manager != null:
+		var config = config_manager.get_config()
+		if config.report_config.get("auto_export", false):
+			call_deferred("_auto_export_reports", project_result)
 	else:
 		push_error("[Plugin] ERROR: dock_panel is null in _finalize_analysis!")
 
@@ -353,6 +358,33 @@ func _on_export_requested(format: String):
 			dock_panel.set_status("Exported %s to %s" % [format.to_upper(), output_path])
 		else:
 			dock_panel.set_status("Failed to export %s" % format.to_upper())
+
+func _auto_export_reports(project_result):
+	if project_result == null or config_manager == null:
+		return
+	var report_gen_script = "res://src/gd3/report_generator.gd" if version_adapter.is_godot_3 else "res://src/gd4/report_generator.gd"
+	var report_gen = load(report_gen_script).new()
+	var config = config_manager.get_config()
+	var formats = config.report_config.get("formats", ["json"])
+	var failed = false
+	
+	if formats.has("json"):
+		var report = report_gen.generate_report(project_result, config)
+		var json_output = config.report_config["output_path"]
+		if not report_gen.write_report(report, json_output):
+			failed = true
+	
+	if formats.has("csv"):
+		var csv_text = report_gen.generate_csv(project_result, config)
+		var csv_output = config.report_config.get("csv_output_path", "res://complexity_report.csv")
+		if not report_gen.write_csv(csv_text, csv_output):
+			failed = true
+	
+	if dock_panel != null:
+		if failed:
+			dock_panel.set_status("Auto export failed")
+		else:
+			dock_panel.set_status("Auto export complete")
 
 func _on_process_next_batch_requested():
 	# Handle deferred processing for Godot 3.x using Timer

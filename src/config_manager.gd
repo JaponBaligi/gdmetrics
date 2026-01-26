@@ -43,7 +43,8 @@ class Config:
 		report_config = {
 			"formats": ["json"],
 			"output_path": "res://complexity_report.json",
-		"csv_output_path": "res://complexity_report.csv",
+			"csv_output_path": "res://complexity_report.csv",
+			"auto_export": false,
 			"annotate_editor": false
 		}
 		performance_config = {
@@ -266,6 +267,10 @@ func _parse_report_config(report_data: Dictionary):
 	if report_data.has("csv_output_path"):
 		if report_data["csv_output_path"] is String:
 			config.report_config["csv_output_path"] = report_data["csv_output_path"]
+	
+	if report_data.has("auto_export"):
+		if report_data["auto_export"] is bool:
+			config.report_config["auto_export"] = report_data["auto_export"]
 	
 	if report_data.has("annotate_editor"):
 		if report_data["annotate_editor"] is bool:

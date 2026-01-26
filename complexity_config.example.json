@@ -23,7 +23,8 @@
 	"report": {
 		"formats": ["json", "csv"],
 		"output_path": "res://complexity_report.json",
-		"csv_output_path": "res://complexity_report.csv"
+		"csv_output_path": "res://complexity_report.csv",
+		"auto_export": false
 	},
 	"performance": {
 		"enable_caching": true,
