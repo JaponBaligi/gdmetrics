@@ -1,10 +1,10 @@
 @tool
 extends AcceptDialog
-class_name ConfigDialog
+# class_name ConfigDialog  # Commented out to avoid parse-time cascade
 
 signal config_saved
 
-var config_manager: ConfigManager = null
+var config_manager = null  # ConfigManager - loaded dynamically
 var config_path: String = "res://complexity_config.json"
 
 # UI elements
@@ -18,11 +18,12 @@ var parser_mode_option: OptionButton = null
 
 func _init():
 	title = "Complexity Analyzer Configuration"
-	size = Vector2i(600, 500)
+	size = Vector2i(650, 550)
 
 func _ready():
 	_setup_ui()
-	_load_config()
+	# Wait a frame to ensure UI is fully initialized
+	call_deferred("_load_config")
 
 func _setup_ui():
 	var vbox = VBoxContainer.new()
@@ -31,12 +32,21 @@ func _setup_ui():
 	vbox.add_theme_constant_override("separation", 10)
 	
 	var scroll = ScrollContainer.new()
-	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	vbox.add_child(scroll)
 	
 	var content = VBoxContainer.new()
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(content)
+	content.add_theme_constant_override("separation", 10)
+	# Add margins for better appearance
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_bottom", 10)
+	scroll.add_child(margin)
+	margin.add_child(content)
 
 	var cc_group = _create_group("Cyclomatic Complexity")
 	content.add_child(cc_group)
@@ -82,6 +92,7 @@ func _setup_ui():
 	
 	include_edit = TextEdit.new()
 	include_edit.custom_minimum_size.y = 80
+	include_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	include_edit.wrap_mode = TextEdit.LINE_WRAPPING_NONE
 	include_group.add_child(include_edit)
 
@@ -90,10 +101,13 @@ func _setup_ui():
 	
 	exclude_edit = TextEdit.new()
 	exclude_edit.custom_minimum_size.y = 80
+	exclude_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	exclude_edit.wrap_mode = TextEdit.LINE_WRAPPING_NONE
 	exclude_group.add_child(exclude_edit)
 
 	var button_row = HBoxContainer.new()
+	button_row.size_flags_vertical = Control.SIZE_SHRINK_END
+	button_row.add_theme_constant_override("separation", 5)
 	vbox.add_child(button_row)
 	
 	var reset_button = Button.new()
@@ -105,20 +119,15 @@ func _setup_ui():
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button_row.add_child(spacer)
 	
-	# In Godot 4.x, AcceptDialog buttons are accessed via get_ok_button() and get_cancel_button()
-	# But get_cancel_button() may not exist, so we handle it gracefully
+	# In Godot 4.x, AcceptDialog buttons are accessed via get_ok_button()
+	# Cancel is handled automatically when dialog is closed (no need to connect)
 	var ok_button = get_ok_button()
 	if ok_button != null:
 		ok_button.pressed.connect(_on_ok_pressed)
-	
-	# Try to get cancel button, but it may not exist in all AcceptDialog implementations
-	if has_method("get_cancel_button"):
-		var cancel_button = get_cancel_button()
-		if cancel_button != null:
-			cancel_button.pressed.connect(_on_cancel_pressed)
 
 func _create_group(title: String) -> VBoxContainer:
 	var group = VBoxContainer.new()
+	group.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	group.add_theme_constant_override("separation", 5)
 	
 	var label = Label.new()
@@ -219,7 +228,7 @@ func _save_config() -> bool:
 	
 	return _write_config_file(config)
 
-func _validate_config(config: ConfigManager.Config) -> bool:
+func _validate_config(config) -> bool:  # ConfigManager.Config - loaded dynamically
 	if config.cc_config["threshold_warn"] < 0 or config.cc_config["threshold_fail"] < 0:
 		OS.alert("CC thresholds must be >= 0", "Validation Error")
 		return false
@@ -234,7 +243,7 @@ func _validate_config(config: ConfigManager.Config) -> bool:
 	
 	return true
 
-func _write_config_file(config: ConfigManager.Config) -> bool:
+func _write_config_file(config) -> bool:  # ConfigManager.Config - loaded dynamically
 	var config_dict = {
 		"include": config.include_patterns,
 		"exclude": config.exclude_patterns,
@@ -269,8 +278,11 @@ func _on_reset_pressed():
 	if config_manager == null:
 		return
 	
-	config_manager = ConfigManager.new()
-	_load_config()
+	# Load ConfigManager dynamically to avoid parse-time cascade
+	var config_manager_script = load("res://src/config_manager.gd")
+	if config_manager_script != null:
+		config_manager = config_manager_script.new()
+		_load_config()
 
 func _on_ok_pressed():
 	if _save_config():
@@ -279,7 +291,7 @@ func _on_ok_pressed():
 func _on_cancel_pressed():
 	hide()
 
-func set_config_manager(manager: ConfigManager):
+func set_config_manager(manager):  # ConfigManager - loaded dynamically
 	config_manager = manager
 	if is_inside_tree():
 		_load_config()
