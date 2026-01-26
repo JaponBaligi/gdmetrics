@@ -28,6 +28,7 @@ test_output/
 test_results/
 *.test.json
 ci_report.json
+complexity_config.json
 
 # Build artefacts
 bin/

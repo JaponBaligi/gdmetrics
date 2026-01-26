@@ -23,6 +23,9 @@ func _ready():
 	_setup_ui()
 
 func _setup_ui():
+	# Set minimum width to prevent text overflow
+	custom_minimum_size = Vector2(300, 0)
+	
 	var vbox = VBoxContainer.new()
 	add_child(vbox)
 	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -33,21 +36,25 @@ func _setup_ui():
 	
 	analyze_button = Button.new()
 	analyze_button.text = "Analyze Project"
+	analyze_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	analyze_button.pressed.connect(_on_analyze_pressed)
 	button_row.add_child(analyze_button)
 	
 	cancel_button = Button.new()
 	cancel_button.text = "Cancel"
+	cancel_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	cancel_button.pressed.connect(_on_cancel_pressed)
 	cancel_button.disabled = true
 	button_row.add_child(cancel_button)
 	
 	config_button = Button.new()
 	config_button.text = "Config"
+	config_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	config_button.pressed.connect(_on_config_pressed)
 	button_row.add_child(config_button)
 	
 	export_button = MenuButton.new()
+	export_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var popup = export_button.get_popup()
 	popup.add_item("Export JSON")
 	popup.add_item("Export CSV")
@@ -62,7 +69,7 @@ func _setup_ui():
 
 	status_label = Label.new()
 	status_label.text = "Ready"
-	status_label.autowrap_mode = Label.AUTOWRAP_WORD_SMART
+	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(status_label)
 
 	results_tree = Tree.new()
@@ -87,7 +94,8 @@ func _apply_editor_theme():
 	if not Engine.is_editor_hint():
 		return
 	
-	var editor_interface = EditorInterface.get_singleton()
+	# In Godot 4.x, EditorInterface is accessed directly as a singleton
+	var editor_interface = EditorInterface
 	if editor_interface == null:
 		return
 	

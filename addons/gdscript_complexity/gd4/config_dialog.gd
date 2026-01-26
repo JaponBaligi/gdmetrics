@@ -82,7 +82,7 @@ func _setup_ui():
 	
 	include_edit = TextEdit.new()
 	include_edit.custom_minimum_size.y = 80
-	include_edit.wrap_mode = TextEdit.WRAP_NONE
+	include_edit.wrap_mode = TextEdit.LINE_WRAPPING_NONE
 	include_group.add_child(include_edit)
 
 	var exclude_group = _create_group("Exclude Patterns (one per line)")
@@ -90,7 +90,7 @@ func _setup_ui():
 	
 	exclude_edit = TextEdit.new()
 	exclude_edit.custom_minimum_size.y = 80
-	exclude_edit.wrap_mode = TextEdit.WRAP_NONE
+	exclude_edit.wrap_mode = TextEdit.LINE_WRAPPING_NONE
 	exclude_group.add_child(exclude_edit)
 
 	var button_row = HBoxContainer.new()
@@ -105,13 +105,17 @@ func _setup_ui():
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button_row.add_child(spacer)
 	
-	var cancel_button = get_cancel_button()
-	if cancel_button != null:
-		cancel_button.pressed.connect(_on_cancel_pressed)
-	
+	# In Godot 4.x, AcceptDialog buttons are accessed via get_ok_button() and get_cancel_button()
+	# But get_cancel_button() may not exist, so we handle it gracefully
 	var ok_button = get_ok_button()
 	if ok_button != null:
 		ok_button.pressed.connect(_on_ok_pressed)
+	
+	# Try to get cancel button, but it may not exist in all AcceptDialog implementations
+	if has_method("get_cancel_button"):
+		var cancel_button = get_cancel_button()
+		if cancel_button != null:
+			cancel_button.pressed.connect(_on_cancel_pressed)
 
 func _create_group(title: String) -> VBoxContainer:
 	var group = VBoxContainer.new()

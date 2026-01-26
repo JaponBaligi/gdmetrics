@@ -33,11 +33,12 @@ func _setup_ui():
 	vbox.add_constant_override("separation", 10)
 	
 	var scroll = ScrollContainer.new()
-	scroll.set_anchors_and_margins_preset(15)  # PRESET_FULL_RECT = 15
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(scroll)
 	
 	var content = VBoxContainer.new()
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.set_anchors_and_margins_preset(15)  # PRESET_FULL_RECT = 15
 	scroll.add_child(content)
 
 	var cc_group = _create_group("Cyclomatic Complexity")
@@ -229,6 +230,44 @@ func _validate_config(config: ConfigManager.Config) -> bool:
 	
 	return true
 
+func _prettify_json(value, indent: String = "\t", current_indent: String = "") -> String:
+	var result = ""
+	
+	if value is Dictionary:
+		if value.empty():
+			return "{}"
+		result = "{\n"
+		var keys = value.keys()
+		for i in range(keys.size()):
+			var key = keys[i]
+			result += current_indent + indent + '"' + str(key).replace('"', '\\"') + '": '
+			result += _prettify_json(value[key], indent, current_indent + indent)
+			if i < keys.size() - 1:
+				result += ","
+			result += "\n"
+		result += current_indent + "}"
+	elif value is Array:
+		if value.empty():
+			return "[]"
+		result = "[\n"
+		for i in range(value.size()):
+			result += current_indent + indent
+			result += _prettify_json(value[i], indent, current_indent + indent)
+			if i < value.size() - 1:
+				result += ","
+			result += "\n"
+		result += current_indent + "]"
+	elif value is String:
+		result = '"' + str(value).replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n') + '"'
+	elif value is bool:
+		result = "true" if value else "false"
+	elif value == null:
+		result = "null"
+	else:
+		result = str(value)
+	
+	return result
+
 func _write_config_file(config: ConfigManager.Config) -> bool:
 	var config_dict = {
 		"include": config.include_patterns,
@@ -246,7 +285,7 @@ func _write_config_file(config: ConfigManager.Config) -> bool:
 		}
 	}
 	
-	var json_string = to_json(config_dict)
+	var json_string = _prettify_json(config_dict)
 	
 	var file = File.new()
 	if file.open(config_path, File.WRITE) != OK:

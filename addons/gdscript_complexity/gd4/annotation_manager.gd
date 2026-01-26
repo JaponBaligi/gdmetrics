@@ -19,7 +19,8 @@ func _detect_annotation_support():
 		annotation_api = "none"
 		return
 	
-	var editor_interface = EditorInterface.get_singleton()
+	# In Godot 4.x, EditorInterface is accessed directly as a singleton
+	var editor_interface = EditorInterface
 	if editor_interface == null:
 		has_annotation_support = false
 		annotation_api = "none"

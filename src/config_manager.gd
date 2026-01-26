@@ -86,14 +86,27 @@ func load_config(config_file_path: String) -> bool:
 	var json_text = f.get_as_text()
 	_file_helper.close_file(f)
 	
-	var json = JSON.new()
-	var parse_result = json.parse(json_text)
+	var version_info = Engine.get_version_info()
+	var is_godot_3 = version_info.get("major", 0) == 3
+	var data: Dictionary
 	
-	if parse_result != OK:
-		errors.append("Invalid JSON in config file: %s (using defaults)" % json.get_error_message())
-		return false
+	if is_godot_3:
+		# Godot 3.x: JSON.parse() returns a JSONParseResult
+		# Note: This will show a parse error in Godot 4.x but won't execute
+		var parse_result = JSON.parse(json_text)
+		if parse_result.error != OK:
+			errors.append("Invalid JSON in config file: %s (using defaults)" % parse_result.error_string)
+			return false
+		data = parse_result.result
+	else:
+		# Godot 4.x: JSON.new() creates an instance
+		var json = JSON.new()
+		var parse_result = json.parse(json_text)
+		if parse_result != OK:
+			errors.append("Invalid JSON in config file: %s (using defaults)" % json.get_error_message())
+			return false
+		data = json.get_data()
 	
-	var data = json.get_data()
 	if not data is Dictionary:
 		errors.append("Config file must contain a JSON object (using defaults)")
 		return false
