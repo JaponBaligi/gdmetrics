@@ -65,9 +65,26 @@ Create a `complexity_config.json` file in your project root (or refactor `comple
   "parser": {
     "parser_mode": "balanced",
     "max_expected_errors_per_100_lines": 5
+  },
+  "performance": {
+    "enable_caching": true,
+    "cache_path": ".gdcomplexity_cache",
+    "incremental_analysis": true
   }
 }
 ```
+
+### Caching System
+
+The analyzer includes a content-based caching system to speed up subsequent analyses:
+
+- **Content-based hashing**: Files are hashed by content (not modification time), so cache remains valid even if files are copied or moved
+- **Config-aware**: Cache automatically invalidates when configuration changes
+- **Incremental analysis**: Only changed files are re-analyzed, significantly reducing analysis time on large projects
+- **Automatic cleanup**: Orphaned cache entries (for deleted files) are automatically removed
+- **Disableable**: Set `"enable_caching": false` in the `performance` section to disable
+
+Cache is stored in `.gdcomplexity_cache/` by default (configurable via `cache_path`).
 
 ## Supported Versions
 

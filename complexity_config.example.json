@@ -19,5 +19,10 @@
 	},
 	"parser": {
 		"parser_mode": "balanced"
+	},
+	"performance": {
+		"enable_caching": true,
+		"cache_path": ".gdcomplexity_cache",
+		"incremental_analysis": true
 	}
 }
