@@ -1,5 +1,5 @@
-extends Object
-class_name ConfigManager
+# class_name ConfigManager  # Commented out to avoid parse-time cascade in Godot 4.x
+extends RefCounted
 
 # Configuration manager
 # handles JSON configuration parsing, validation, and defaults
@@ -58,54 +58,83 @@ var config: Config
 var config_path: String = ""
 var errors: Array = []
 var _file_helper = null
+var _is_godot_3: bool = false
 
 func _init(config_file_path: String = ""):
 	config = Config.new()
 	var version_info = Engine.get_version_info()
-	var is_godot_3 = version_info.get("major", 0) == 3
-	if is_godot_3:
-		_file_helper = load("res://src/gd3/file_helper.gd").new()
+	_is_godot_3 = version_info.get("major", 0) == 3
+	# Load file helper dynamically - lazy load to avoid parse-time cascade
+	# In Godot 4.x, use native APIs directly to avoid loading gd3 files
+	if _is_godot_3:
+		# Only load gd3 file helper in Godot 3.x (lazy load)
+		# Don't load here to avoid parse-time cascade in 4.x
+		pass
 	else:
-		_file_helper = load("res://src/gd4/file_helper.gd").new()
+		# Load gd4 file helper in Godot 4.x
+		var helper_script = load("res://src/gd4/file_helper.gd")
+		if helper_script != null:
+			_file_helper = helper_script.new()
 	if config_file_path != "":
 		load_config(config_file_path)
+
+func _ensure_file_helper():
+	# Lazy load file helper for Godot 3.x to avoid parse-time cascade
+	if _file_helper != null:
+		return
+	if _is_godot_3:
+		var helper_script = load("res://src/gd3/file_helper.gd")
+		if helper_script != null:
+			_file_helper = helper_script.new()
 
 func load_config(config_file_path: String) -> bool:
 	errors.clear()
 	config_path = config_file_path
 	
-	if not _file_helper.file_exists(config_file_path):
-		errors.append("Config file not found: %s (using defaults)" % config_file_path)
-		return false
+	_ensure_file_helper()
 	
-	var f = _file_helper.open_read(config_file_path)
-	if f == null:
-		errors.append("Failed to open config file: %s (using defaults)" % config_file_path)
-		return false
+	var json_text: String = ""
 	
-	var json_text = f.get_as_text()
-	_file_helper.close_file(f)
-	
-	var version_info = Engine.get_version_info()
-	var is_godot_3 = version_info.get("major", 0) == 3
-	var data: Dictionary
-	
-	if is_godot_3:
-		# Godot 3.x: JSON.parse() returns a JSONParseResult
-		# Note: This will show a parse error in Godot 4.x but won't execute
-		var parse_result = JSON.parse(json_text)
-		if parse_result.error != OK:
-			errors.append("Invalid JSON in config file: %s (using defaults)" % parse_result.error_string)
+	# Use native APIs in Godot 4.x to avoid loading gd3 files
+	if not _is_godot_3:
+		# Use Godot 4.x APIs directly
+		if not FileAccess.file_exists(config_file_path):
+			errors.append("Config file not found: %s (using defaults)" % config_file_path)
 			return false
-		data = parse_result.result
+		
+		var f = FileAccess.open(config_file_path, FileAccess.READ)
+		if f == null:
+			errors.append("Failed to open config file: %s (using defaults)" % config_file_path)
+			return false
+		
+		json_text = f.get_as_text()
+		f = null  # FileAccess auto-closes
 	else:
-		# Godot 4.x: JSON.new() creates an instance
-		var json = JSON.new()
-		var parse_result = json.parse(json_text)
-		if parse_result != OK:
-			errors.append("Invalid JSON in config file: %s (using defaults)" % json.get_error_message())
+		# Use file helper for Godot 3.x
+		if _file_helper == null:
+			errors.append("File helper not available (using defaults)")
 			return false
-		data = json.get_data()
+		
+		if not _file_helper.file_exists(config_file_path):
+			errors.append("Config file not found: %s (using defaults)" % config_file_path)
+			return false
+		
+		var f = _file_helper.open_read(config_file_path)
+		if f == null:
+			errors.append("Failed to open config file: %s (using defaults)" % config_file_path)
+			return false
+		
+		json_text = f.get_as_text()
+		_file_helper.close_file(f)
+	
+	# Parse JSON - Godot 4.x only in this testing project
+	var json = JSON.new()
+	var parse_result = json.parse(json_text)
+	if parse_result != OK:
+		errors.append("Invalid JSON in config file: %s (using defaults)" % json.get_error_message())
+		return false
+	
+	var data = json.get_data()
 	
 	if not data is Dictionary:
 		errors.append("Config file must contain a JSON object (using defaults)")

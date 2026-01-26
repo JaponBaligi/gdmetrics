@@ -14,11 +14,36 @@ A Godot EditorPlugin that analyzes GDScript code complexity using Cyclomatic Com
 
 ## Installation
 
-1. Clone or download this repository
-2. Copy the `addons/gdscript_complexity` folder to your Godot project's `addons/` directory
-3. Open your project in Godot
-4. Go to **Project > Project Settings > Plugins**
-5. Enable "GDScript Complexity Analyzer"
+### Choose Your Branch
+
+This repository uses separate branches for different Godot versions:
+
+- **Godot 3.x**: Use the `main` branch (default)
+- **Godot 4.x**: Use the `godot4` branch
+
+### Installation Steps
+
+**For Godot 3.x:**
+```bash
+git clone <repo-url>
+cd godot_cc
+# Already on main branch, or: git checkout main
+```
+
+**For Godot 4.x:**
+```bash
+git clone <repo-url>
+cd godot_cc
+git checkout godot4
+```
+
+Then:
+1. Copy the `addons/gdscript_complexity` folder to your Godot project's `addons/` directory
+2. Open your project in Godot
+3. Go to **Project > Project Settings > Plugins**
+4. Enable "GDScript Complexity Analyzer"
+
+> **Note**: See [Branch Strategy](docs/BRANCH_STRATEGY.md) for details on why separate branches are used.
 
 ## Usage
 
@@ -166,6 +191,7 @@ This is a pre-Phase 5 project. Core functionality is complete, but testing and p
 
 ## Documentation
 
+- [Branch Strategy](docs/BRANCH_STRATEGY.md) - Branch structure and version support
 - [Progress Tracking](docs/PROGRESS.md) - Implementation status
 - [Compatibility Matrix](docs/COMPATIBILITY.md) - Version support details
 - [Before Phase 5](docs/before5.md) - Pre-Phase 5 roadmap

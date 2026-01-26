@@ -1,5 +1,5 @@
-extends Object
-class_name VersionAdapter
+# class_name VersionAdapter  # Commented out to avoid parse-time cascade in Godot 4.x
+extends RefCounted
 
 # Handles version detection and feature flags
 

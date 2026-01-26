@@ -1,12 +1,12 @@
-tool
+@tool
 extends EditorPlugin
 
 var dock_panel: Control = null
-var config_manager: ConfigManager = null
-var async_analyzer: AsyncAnalyzer = null
-var annotation_manager: AnnotationManager = null
-var config_dialog: ConfigDialog = null
-var version_adapter: VersionAdapter = null
+var config_manager = null  # ConfigManager - loaded dynamically
+var async_analyzer = null  # AsyncAnalyzer - loaded dynamically based on version
+var annotation_manager = null  # AnnotationManager - loaded dynamically based on version
+var config_dialog = null  # ConfigDialog - loaded dynamically based on version
+var version_adapter = null  # VersionAdapter - loaded dynamically
 var godot_version: Dictionary = {}
 var process_timer: Timer = null  # Timer for deferred processing in Godot 3.x
 
@@ -18,7 +18,7 @@ func _enter_tree():
 		godot_version["major"], godot_version["minor"], godot_version["patch"]
 	])
 	
-	version_adapter = preload("res://addons/gdscript_complexity/version_adapter.gd").new()
+	version_adapter = load("res://addons/gdscript_complexity/version_adapter.gd").new()
 	
 	if not version_adapter.is_supported_version():
 		push_error("[ComplexityAnalyzer] Unsupported Godot version: %s" % version_adapter.get_version_string())
@@ -29,7 +29,7 @@ func _enter_tree():
 	if godot_version["major"] < 4:
 		print("[ComplexityAnalyzer] Running in Godot 3.x mode (best-effort support)")
 	
-	config_manager = preload("res://src/config_manager.gd").new()
+	config_manager = load("res://src/config_manager.gd").new()
 	
 	var config_path = "res://complexity_config.json"
 	if not config_manager.load_config(config_path):
@@ -54,14 +54,14 @@ func _enter_tree():
 		async_analyzer_script = "res://addons/gdscript_complexity/gd4/async_analyzer.gd"
 	async_analyzer = load(async_analyzer_script).new()
 	async_analyzer.batch_size = 10
-	# Use connect() syntax compatible with both 3.x and 4.x
-	async_analyzer.connect("progress_updated", self, "_on_progress_updated")
-	async_analyzer.connect("file_analyzed", self, "_on_file_analyzed")
-	async_analyzer.connect("analysis_complete", self, "_on_analysis_complete")
-	async_analyzer.connect("analysis_cancelled", self, "_on_analysis_cancelled")
+	# Use Godot 4.x Callable syntax (required for 4.x parser)
+	async_analyzer.connect("progress_updated", Callable(self, "_on_progress_updated"))
+	async_analyzer.connect("file_analyzed", Callable(self, "_on_file_analyzed"))
+	async_analyzer.connect("analysis_complete", Callable(self, "_on_analysis_complete"))
+	async_analyzer.connect("analysis_cancelled", Callable(self, "_on_analysis_cancelled"))
 	# Connect process_next_batch_requested signal for Godot 3.x deferred processing
-	if is_godot_3:
-		async_analyzer.connect("process_next_batch_requested", self, "_on_process_next_batch_requested")
+	if version_adapter.is_godot_3:
+		async_analyzer.connect("process_next_batch_requested", Callable(self, "_on_process_next_batch_requested"))
 	
 	var annotation_manager_script: String
 	if is_godot_3:
@@ -85,44 +85,45 @@ func _enter_tree():
 	config_dialog = load(config_dialog_script).new()
 	config_dialog.set_config_manager(config_manager)
 	config_dialog.set_config_path("res://complexity_config.json")
-	# Use connect() syntax compatible with both 3.x and 4.x
-	config_dialog.connect("config_saved", self, "_on_config_saved")
+	# Use Godot 4.x Callable syntax (required for 4.x parser)
+	config_dialog.connect("config_saved", Callable(self, "_on_config_saved"))
 	add_child(config_dialog)
 	
-	# Use connect() syntax compatible with both 3.x and 4.x
+	# Use Godot 4.x Callable syntax (required for 4.x parser)
 	# Verify method exists before connecting (helps debug connection issues)
 	if not has_method("_on_analyze_requested"):
 		push_error("[ComplexityAnalyzer] ERROR: _on_analyze_requested method not found!")
 	else:
-		var connect_result = dock_panel.connect("analyze_requested", self, "_on_analyze_requested")
+		var connect_result = dock_panel.connect("analyze_requested", Callable(self, "_on_analyze_requested"))
 		if connect_result != OK:
 			push_error("[ComplexityAnalyzer] Failed to connect analyze_requested signal: %d" % connect_result)
 		else:
 			print("[ComplexityAnalyzer] Successfully connected analyze_requested signal")
 	
 	if has_method("_on_cancel_requested"):
-		dock_panel.connect("cancel_requested", self, "_on_cancel_requested")
+		dock_panel.connect("cancel_requested", Callable(self, "_on_cancel_requested"))
 	else:
 		push_error("[ComplexityAnalyzer] ERROR: _on_cancel_requested method not found!")
 	
 	if has_method("_on_config_requested"):
-		dock_panel.connect("config_requested", self, "_on_config_requested")
+		dock_panel.connect("config_requested", Callable(self, "_on_config_requested"))
 	else:
 		push_error("[ComplexityAnalyzer] ERROR: _on_config_requested method not found!")
 	
 	if has_method("_on_export_requested"):
-		dock_panel.connect("export_requested", self, "_on_export_requested")
+		dock_panel.connect("export_requested", Callable(self, "_on_export_requested"))
 	else:
 		push_error("[ComplexityAnalyzer] ERROR: _on_export_requested method not found!")
 	
 	# Create timer for deferred processing in Godot 3.x
-	if is_godot_3:
+	if version_adapter.is_godot_3:
 		process_timer = Timer.new()
 		process_timer.wait_time = 0.01  # Process every 10ms
 		process_timer.one_shot = true
 		process_timer.autostart = false
 		add_child(process_timer)
-		process_timer.connect("timeout", self, "_process_next_batch_deferred")
+		# Note: This will only execute in Godot 3.x, but parser requires 4.x syntax
+		process_timer.connect("timeout", Callable(self, "_process_next_batch_deferred"))
 	
 	print("[ComplexityAnalyzer] Plugin initialized successfully")
 
@@ -167,7 +168,7 @@ func get_godot_version() -> Dictionary:
 func is_godot_4() -> bool:
 	return godot_version["major"] == 4
 
-func get_version_adapter() -> VersionAdapter:
+func get_version_adapter():
 	return version_adapter
 
 func _on_analyze_requested():
@@ -223,7 +224,7 @@ func _on_analyze_requested():
 	
 	print("[Plugin] Deferred call scheduled")
 
-func _start_analysis_deferred(project_path: String, config: ConfigManager.Config, adapter: VersionAdapter, plugin: Node):
+func _start_analysis_deferred(project_path: String, config, adapter, plugin: Node):
 	print("[Plugin] _start_analysis_deferred called")
 	
 	if async_analyzer == null:
@@ -248,10 +249,10 @@ func _update_progress(current: int, total: int, file_path: String):
 		dock_panel.set_progress(current, total)
 		dock_panel.set_status("Analyzing: %s (%d/%d)" % [file_path.get_file(), current, total])
 
-func _on_file_analyzed(file_result: BatchAnalyzer.FileResult):
+func _on_file_analyzed(file_result):
 	call_deferred("_add_file_result", file_result)
 
-func _add_file_result(file_result: BatchAnalyzer.FileResult):
+func _add_file_result(file_result):
 	if dock_panel == null or not file_result.success:
 		return
 	
@@ -274,11 +275,11 @@ func _add_file_result(file_result: BatchAnalyzer.FileResult):
 		var cog_threshold = config.cog_config["threshold_warn"]
 		annotation_manager.annotate_file_results(file_result, cc_threshold, cog_threshold)
 
-func _on_analysis_complete(project_result: BatchAnalyzer.ProjectResult):
+func _on_analysis_complete(project_result):
 	print("[Plugin] _on_analysis_complete called")
 	call_deferred("_finalize_analysis", project_result)
 
-func _finalize_analysis(project_result: BatchAnalyzer.ProjectResult):
+func _finalize_analysis(project_result):
 	print("[Plugin] _finalize_analysis called")
 	if dock_panel != null:
 		var status_msg = "Analysis complete: %d files, CC: %d, C-COG: %d" % [
