@@ -266,6 +266,7 @@ func _file_result_to_dict(file_result) -> Dictionary:
 		"errors": file_result.errors,
 		"cc_breakdown": file_result.cc_breakdown,
 		"cog_breakdown": file_result.cog_breakdown,
+			"per_function_cc": file_result.per_function_cc,
 		"per_function_cog": file_result.per_function_cog
 	}
 
@@ -282,6 +283,7 @@ func _dict_to_file_result(data: Dictionary):
 	result.errors = data.get("errors", [])
 	result.cc_breakdown = data.get("cc_breakdown", {})
 	result.cog_breakdown = data.get("cog_breakdown", {})
+	result.per_function_cc = data.get("per_function_cc", {})
 	result.per_function_cog = data.get("per_function_cog", {})
 	return result
 

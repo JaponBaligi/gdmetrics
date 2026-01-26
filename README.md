@@ -10,6 +10,7 @@ A Godot EditorPlugin that analyzes GDScript code complexity using Cyclomatic Com
 - **CLI Mode**: Run analysis from command line for CI/CD integration
 - **Editor Integration**: Visual complexity warnings in the script editor
 - **JSON Reports**: Export detailed analysis reports
+- **CSV Reports**: Export per-function metrics
 - **Configurable Thresholds**: Set custom complexity limits
 
 ## Installation
@@ -59,12 +60,12 @@ Then:
 
 **Godot 4.x:**
 ```bash
-godot --headless --script cli/ci_test.gd -- --project-path . --output report.json
+godot --headless --script cli/ci_test.gd -- --project-path . --output report.json --csv-output report.csv
 ```
 
 **Godot 3.5:**
 ```bash
-godot --script cli/ci_test.gd -- --project-path . --output report.json
+godot --script cli/ci_test.gd -- --project-path . --output report.json --csv-output report.csv
 ```
 
 The report will be written to `report.json`. On Godot 3.5, a fallback copy is also written to `user://ci_report_fallback.json` (see `OS.get_user_data_dir()` for location).
@@ -90,6 +91,11 @@ Create a `complexity_config.json` file in your project root (or refactor `comple
   "parser": {
     "parser_mode": "balanced",
     "max_expected_errors_per_100_lines": 5
+  },
+  "report": {
+    "formats": ["json", "csv"],
+    "output_path": "res://complexity_report.json",
+    "csv_output_path": "res://complexity_report.csv"
   },
   "performance": {
     "enable_caching": true,

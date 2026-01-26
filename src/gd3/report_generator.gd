@@ -38,6 +38,34 @@ func generate_report(project_result, config) -> Dictionary:
 	}
 	return report
 
+func generate_csv(project_result, config) -> String:
+	var rows = []
+	rows.append(["file_path", "function_name", "CC", "C-COG", "confidence", "line_start", "line_end"])
+	
+	for result in project_result.file_results:
+		if not result.success:
+			continue
+		for func_info in result.functions:
+			var func_name = func_info.name
+			var cc_value = 0
+			var cog_value = 0
+			if result.per_function_cc.has(func_name):
+				cc_value = result.per_function_cc[func_name]
+			if result.per_function_cog.has(func_name):
+				cog_value = result.per_function_cog[func_name]
+			
+			rows.append([
+				result.file_path,
+				func_name,
+				cc_value,
+				cog_value,
+				result.confidence,
+				func_info.start_line,
+				func_info.end_line
+			])
+	
+	return _build_csv(rows)
+
 func _format_worst_offenders(file_results: Array, metric: String) -> Array:
 	var offenders = []
 	for result in file_results:
@@ -110,6 +138,18 @@ func write_report(report: Dictionary, output_path: String) -> bool:
 	file.close()
 	return true
 
+func write_csv(csv_text: String, output_path: String) -> bool:
+	output_path = _sanitize_path(output_path)
+	if not _check_output_overwrite(output_path):
+		return false
+	var file = File.new()
+	var err = file.open(output_path, File.WRITE)
+	if err != OK:
+		return false
+	file.store_string(csv_text)
+	file.close()
+	return true
+
 func _sanitize_path(path: String) -> String:
 	if path.length() == 0:
 		return "complexity_report.json"
@@ -134,3 +174,30 @@ func generate_and_write(project_result, config) -> bool:
 	var report = generate_report(project_result, config)
 	var output_path = config.report_config["output_path"]
 	return write_report(report, output_path)
+
+func generate_and_write_csv(project_result, config) -> bool:
+	var csv_text = generate_csv(project_result, config)
+	var output_path = config.report_config.get("csv_output_path", "res://complexity_report.csv")
+	return write_csv(csv_text, output_path)
+
+func _build_csv(rows: Array) -> String:
+	var lines: Array = []
+	for row in rows:
+		var escaped: Array = []
+		for value in row:
+			escaped.append(_csv_escape(value))
+		var line = ""
+		for i in range(escaped.size()):
+			if i > 0:
+				line += ","
+			line += escaped[i]
+		lines.append(line)
+	return "\n".join(lines)
+
+func _csv_escape(value) -> String:
+	var text = "" if value == null else str(value)
+	var needs_quotes = text.find(",") >= 0 or text.find("\"") >= 0 or text.find("\n") >= 0 or text.find("\r") >= 0
+	if needs_quotes:
+		text = text.replace("\"", "\"\"")
+		text = "\"" + text + "\""
+	return text

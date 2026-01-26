@@ -20,6 +20,11 @@
 	"parser": {
 		"parser_mode": "balanced"
 	},
+	"report": {
+		"formats": ["json", "csv"],
+		"output_path": "res://complexity_report.json",
+		"csv_output_path": "res://complexity_report.csv"
+	},
 	"performance": {
 		"enable_caching": true,
 		"cache_path": ".gdcomplexity_cache",

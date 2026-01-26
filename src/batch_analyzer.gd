@@ -15,6 +15,7 @@ class FileResult:
 	var errors: Array = []
 	var cc_breakdown: Dictionary = {}
 	var cog_breakdown: Dictionary = {}
+	var per_function_cc: Dictionary = {}
 	var per_function_cog: Dictionary = {}
 
 class ProjectResult:
@@ -146,6 +147,7 @@ func _analyze_file(file_path: String, config):  # -> FileResult - nested class
 	var cc = cc_calc.calculate_cc(control_flow_nodes)
 	result.cc = cc
 	result.cc_breakdown = cc_calc.get_breakdown()
+	result.per_function_cc = _calculate_per_function_cc(control_flow_nodes, functions)
 	
 	var cog_calc = load("res://src/cog_complexity_calculator.gd").new()
 	var cog_result = cog_calc.calculate_cog(control_flow_nodes, functions)
@@ -178,8 +180,26 @@ func _restore_file_result_from_cache(cached_data: Dictionary) -> FileResult:
 	result.errors = cached_data.get("errors", [])
 	result.cc_breakdown = cached_data.get("cc_breakdown", {})
 	result.cog_breakdown = cached_data.get("cog_breakdown", {})
+	result.per_function_cc = cached_data.get("per_function_cc", {})
 	result.per_function_cog = cached_data.get("per_function_cog", {})
 	return result
+
+func _calculate_per_function_cc(control_flow_nodes: Array, functions: Array) -> Dictionary:
+	var per_function = {}
+	if functions.size() == 0:
+		return per_function
+	
+	for func_info in functions:
+		var func_nodes: Array = []
+		for node in control_flow_nodes:
+			if node.line >= func_info.start_line and node.line <= func_info.end_line:
+				func_nodes.append(node)
+		
+		var cc_calc = load("res://src/cc_calculator.gd").new()
+		var func_cc = cc_calc.calculate_cc(func_nodes)
+		per_function[func_info.name] = func_cc
+	
+	return per_function
 
 func _calculate_worst_offenders(file_results: Array):
 	var cc_sorted = []

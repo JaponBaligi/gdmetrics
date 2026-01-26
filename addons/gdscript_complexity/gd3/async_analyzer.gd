@@ -214,6 +214,7 @@ func _analyze_file(file_path: String) -> BatchAnalyzer.FileResult:
 	var cc = cc_calc.calculate_cc(control_flow_nodes)
 	result.cc = cc
 	result.cc_breakdown = cc_calc.get_breakdown()
+	result.per_function_cc = _calculate_per_function_cc(control_flow_nodes, functions)
 	
 	var cog_calc = preload("res://src/cog_complexity_calculator.gd").new()
 	var cog_result = cog_calc.calculate_cog(control_flow_nodes, functions)
@@ -227,6 +228,23 @@ func _analyze_file(file_path: String) -> BatchAnalyzer.FileResult:
 	
 	result.success = true
 	return result
+
+func _calculate_per_function_cc(control_flow_nodes: Array, functions: Array) -> Dictionary:
+	var per_function = {}
+	if functions.size() == 0:
+		return per_function
+	
+	for func_info in functions:
+		var func_nodes: Array = []
+		for node in control_flow_nodes:
+			if node.line >= func_info.start_line and node.line <= func_info.end_line:
+				func_nodes.append(node)
+		
+		var cc_calc = preload("res://src/cc_calculator.gd").new()
+		var func_cc = cc_calc.calculate_cc(func_nodes)
+		per_function[func_info.name] = func_cc
+	
+	return per_function
 
 func _finalize_results():
 	if project_result.successful_files > 0:

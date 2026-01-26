@@ -16,6 +16,7 @@ func _initialize():
 	var args = OS.get_cmdline_args()
 	var project_path = "."
 	var output_path = "ci_report.json"
+	var csv_output_path = ""
 	
 	var dash_index = args.find("--")
 	if dash_index >= 0:
@@ -31,10 +32,13 @@ func _initialize():
 			elif arg == "--output" and i + 1 < remaining_args.size():
 				output_path = _sanitize_path(remaining_args[i + 1])
 				i += 2
+			elif arg == "--csv-output" and i + 1 < remaining_args.size():
+				csv_output_path = _sanitize_path(remaining_args[i + 1])
+				i += 2
 			else:
 				i += 1
 	
-	var exit_code = run_analysis(project_path, output_path)
+	var exit_code = run_analysis(project_path, output_path, csv_output_path)
 	call_deferred("quit", exit_code)
 
 func _sanitize_path(path: String) -> String:
@@ -64,7 +68,7 @@ func _check_output_overwrite(output_path: String) -> bool:
 	
 	return true
 
-func run_analysis(project_path: String, output_path: String) -> int:
+func run_analysis(project_path: String, output_path: String, csv_output_path: String) -> int:
 	print("Running CI analysis test...")
 	
 	project_path = _sanitize_path(project_path)
@@ -80,6 +84,11 @@ func run_analysis(project_path: String, output_path: String) -> int:
 	print("Godot version: %s" % version_adapter.get_version_string())
 	
 	var config = load("res://src/config_manager.gd").new()
+	var config_path = "res://complexity_config.json"
+	if not config.load_config(config_path):
+		if config.has_errors():
+			for error in config.get_errors():
+				print("Config warning: %s" % error)
 	var default_config = config.get_config()
 	
 	var batch_analyzer = load("res://src/batch_analyzer.gd").new()
@@ -113,6 +122,20 @@ func run_analysis(project_path: String, output_path: String) -> int:
 		return 1
 	
 	print("Report written to: %s" % output_path)
+	
+	var should_write_csv = false
+	if csv_output_path != "":
+		should_write_csv = true
+	elif default_config.report_config.has("formats") and default_config.report_config["formats"].has("csv"):
+		csv_output_path = default_config.report_config.get("csv_output_path", "complexity_report.csv")
+		should_write_csv = true
+	
+	if should_write_csv:
+		var csv_text = report_gen.generate_csv(project_result, default_config)
+		if not report_gen.write_csv(csv_text, csv_output_path):
+			print("ERROR: Failed to write CSV report")
+			return 1
+		print("CSV report written to: %s" % csv_output_path)
 	print("Total CC: %d" % project_result.total_cc)
 	print("Total C-COG: %d" % project_result.total_cog)
 	print("Average CC: %.2f" % project_result.average_cc)

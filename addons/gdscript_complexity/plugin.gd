@@ -9,6 +9,7 @@ var config_dialog = null  # ConfigDialog - loaded dynamically based on version
 var version_adapter = null  # VersionAdapter - loaded dynamically
 var godot_version: Dictionary = {}
 var process_timer: Timer = null  # Timer for deferred processing in Godot 3.x
+var last_project_result = null
 
 func _enter_tree():
 	print("[ComplexityAnalyzer] Plugin entering tree...")
@@ -281,6 +282,7 @@ func _on_analysis_complete(project_result):
 
 func _finalize_analysis(project_result):
 	print("[Plugin] _finalize_analysis called")
+	last_project_result = project_result
 	if dock_panel != null:
 		var status_msg = "Analysis complete: %d files, CC: %d, C-COG: %d" % [
 			project_result.successful_files,
@@ -322,7 +324,35 @@ func _on_config_saved():
 		config_manager.load_config(config_path)
 
 func _on_export_requested(format: String):
-	print("[ComplexityAnalyzer] Export requested: %s (not implemented yet)" % format)
+	if last_project_result == null:
+		if dock_panel != null:
+			dock_panel.set_status("No analysis results to export")
+		return
+	
+	var report_gen_script = "res://src/gd3/report_generator.gd" if version_adapter.is_godot_3 else "res://src/gd4/report_generator.gd"
+	var report_gen = load(report_gen_script).new()
+	var config = config_manager.get_config()
+	var ok = false
+	var output_path = ""
+	
+	if format == "json":
+		var report = report_gen.generate_report(last_project_result, config)
+		output_path = config.report_config["output_path"]
+		ok = report_gen.write_report(report, output_path)
+	elif format == "csv":
+		var csv_text = report_gen.generate_csv(last_project_result, config)
+		output_path = config.report_config.get("csv_output_path", "res://complexity_report.csv")
+		ok = report_gen.write_csv(csv_text, output_path)
+	else:
+		if dock_panel != null:
+			dock_panel.set_status("Unsupported export format: %s" % format)
+		return
+	
+	if dock_panel != null:
+		if ok:
+			dock_panel.set_status("Exported %s to %s" % [format.to_upper(), output_path])
+		else:
+			dock_panel.set_status("Failed to export %s" % format.to_upper())
 
 func _on_process_next_batch_requested():
 	# Handle deferred processing for Godot 3.x using Timer
