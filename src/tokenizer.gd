@@ -1,8 +1,8 @@
-extends RefCounted
-class_name GDScriptTokenizer
+extends Object
 
-# Tokenizer for GDScript
-# Keywords, identifiers, operators, comments, strings, numbers 
+# Tokenizer for GDScript (Godot 4.x version)
+# Note: class_name is declared in gd3/tokenizer.gd for 3.x compatibility
+# This file is for Godot 4.x only 
 
 var file_helper = null
 
@@ -11,9 +11,9 @@ func _init():
 	var is_godot_3 = version_info.get("major", 0) == 3
 	
 	if is_godot_3:
-		file_helper = load("res://src/file_helper_3.gd").new()
+		file_helper = load("res://src/gd3/file_helper.gd").new()
 	else:
-		file_helper = load("res://src/file_helper_4.gd").new()
+		file_helper = load("res://src/gd4/file_helper.gd").new()
 
 enum TokenType {
 	KEYWORD,
@@ -76,9 +76,9 @@ func tokenize_file(file_path: String) -> Array:
 	
 	if file_helper == null:
 		if is_godot_3:
-			file_helper = load("res://src/file_helper_3.gd").new()
+			file_helper = load("res://src/gd3/file_helper.gd").new()
 		else:
-			file_helper = load("res://src/file_helper_4.gd").new()
+			file_helper = load("res://src/gd4/file_helper.gd").new()
 	
 	var file_exists = file_helper.file_exists(file_path)
 	

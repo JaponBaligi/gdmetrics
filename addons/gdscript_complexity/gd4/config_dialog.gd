@@ -282,4 +282,3 @@ func set_config_manager(manager: ConfigManager):
 
 func set_config_path(path: String):
 	config_path = path
-

@@ -38,7 +38,7 @@ func analyze_project(root_path: String, config, adapter = null) -> ProjectResult
 	project_result = ProjectResult.new()
 	version_adapter = adapter
 	
-	var discovery_script = "res://src/file_discovery_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/file_discovery_4.gd"
+	var discovery_script = "res://src/gd3/file_discovery.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/gd4/file_discovery.gd"
 	var discovery = load(discovery_script).new()
 	var files = discovery.find_files(root_path, config.include_patterns, config.exclude_patterns)
 	
@@ -84,7 +84,7 @@ func analyze_project(root_path: String, config, adapter = null) -> ProjectResult
 func _get_tokenizer_script() -> String:
 	var version_info = Engine.get_version_info()
 	var is_godot_3 = version_info.get("major", 0) == 3
-	return "res://src/tokenizer_3.gd" if is_godot_3 else "res://src/tokenizer.gd"
+	return "res://src/gd3/tokenizer.gd" if is_godot_3 else "res://src/tokenizer.gd"
 
 func _analyze_file(file_path: String, config) -> FileResult:
 	var result = FileResult.new()

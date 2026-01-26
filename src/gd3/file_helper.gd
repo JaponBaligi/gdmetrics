@@ -17,4 +17,3 @@ func open_read(file_path: String):
 func close_file(file):
 	if file != null:
 		file.close()
-

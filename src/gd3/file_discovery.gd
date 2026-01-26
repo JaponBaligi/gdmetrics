@@ -2,13 +2,20 @@ extends Object
 
 # File discovery for Godot 3.x (Directory, plus_file)
 
+const MAX_DEPTH = 50  # Prevent infinite recursion
+
 func find_files(root_path: String, include_patterns: Array, exclude_patterns: Array) -> Array:
 	var files: Array = []
 	root_path = _sanitize_path(root_path)
+	print("[FileDiscovery] Starting file discovery in: %s" % root_path)
+	print("[FileDiscovery] Include patterns: %s" % str(include_patterns))
+	print("[FileDiscovery] Exclude patterns: %s" % str(exclude_patterns))
 	var dir = Directory.new()
 	if dir.open(root_path) != OK:
+		print("[FileDiscovery] ERROR: Failed to open root path: %s" % root_path)
 		return files
-	_find_files_recursive(root_path, root_path, include_patterns, exclude_patterns, files)
+	_find_files_recursive(root_path, root_path, include_patterns, exclude_patterns, files, 0)
+	print("[FileDiscovery] File discovery complete, found %d files" % files.size())
 	return files
 
 func _sanitize_path(path: String) -> String:
@@ -22,26 +29,66 @@ func _sanitize_path(path: String) -> String:
 			sanitized = sanitized.substr(1)
 	return sanitized
 
-func _find_files_recursive(root_path: String, current_path: String, include_patterns: Array, exclude_patterns: Array, files: Array):
+func _find_files_recursive(root_path: String, current_path: String, include_patterns: Array, exclude_patterns: Array, files: Array, depth: int):
+	if depth > MAX_DEPTH:
+		print("[FileDiscovery] WARNING: Max depth reached at: %s" % current_path)
+		return
+	
+	# Skip common large directories early
+	var dir_name = current_path.get_file()
+	if dir_name.begins_with(".") and dir_name != ".":
+		return
+	if dir_name == "node_modules" or dir_name == ".git" or dir_name == ".godot":
+		return
+	
+	# Log progress every 10 directories
+	if depth <= 2 and files.size() % 10 == 0 and files.size() > 0:
+		print("[FileDiscovery] Progress: Found %d files so far, scanning: %s" % [files.size(), current_path])
+	
 	var dir = Directory.new()
 	if dir.open(current_path) != OK:
 		return
-	dir.list_dir_begin()
+	
+	var list_result = dir.list_dir_begin(true, false)  # Skip navigational and hidden
+	if list_result != OK:
+		return
+	
 	var file_name = dir.get_next()
+	var file_count = 0
+	
 	while file_name != "":
+		file_count += 1
+		if file_count > 1000:  # Safety limit per directory
+			print("[FileDiscovery] WARNING: Too many files in directory: %s (stopping at 1000)" % current_path)
+			break
+		
 		if file_name.find("..") >= 0 or file_name.find("/") >= 0 or file_name.find("\\") >= 0:
 			file_name = dir.get_next()
 			continue
+		
 		var full_path = current_path.plus_file(file_name)
 		full_path = _sanitize_path(full_path)
+		
 		if dir.current_is_dir():
-			_find_files_recursive(root_path, full_path, include_patterns, exclude_patterns, files)
+			# Skip if this directory should be excluded
+			var relative_path = _make_relative(root_path, full_path)
+			if not _is_excluded(relative_path, exclude_patterns):
+				_find_files_recursive(root_path, full_path, include_patterns, exclude_patterns, files, depth + 1)
 		else:
 			if file_name.ends_with(".gd"):
 				var relative_path = _make_relative(root_path, full_path)
 				if _matches_patterns(relative_path, include_patterns, exclude_patterns):
 					files.append(full_path)
+		
 		file_name = dir.get_next()
+	
+	dir.list_dir_end()
+
+func _is_excluded(file_path: String, exclude_patterns: Array) -> bool:
+	for pattern in exclude_patterns:
+		if _match_pattern(file_path, pattern):
+			return true
+	return false
 
 func _make_relative(root_path: String, full_path: String) -> String:
 	if full_path.begins_with(root_path):

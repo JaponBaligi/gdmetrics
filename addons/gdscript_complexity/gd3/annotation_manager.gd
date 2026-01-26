@@ -1,8 +1,8 @@
-@tool
-extends RefCounted
+tool
+extends Reference
 class_name AnnotationManager
 
-# Adds complexity warnings to script editor
+# Adds complexity warnings to script editor (Godot 3.x version)
 
 var script_editor: Object = null
 var has_annotation_support: bool = false
@@ -19,31 +19,12 @@ func _detect_annotation_support():
 		annotation_api = "none"
 		return
 	
-	var editor_interface = EditorInterface.get_singleton()
-	if editor_interface == null:
-		has_annotation_support = false
-		annotation_api = "none"
-		return
-	
-	script_editor = editor_interface.get_script_editor()
-	if script_editor == null:
-		has_annotation_support = false
-		annotation_api = "none"
-		return
-
-	if script_editor.has_method("add_error_annotation"):
-		has_annotation_support = true
-		annotation_api = "add_error_annotation"
-		return
-
-	if script_editor.has_method("set_error"):
-		has_annotation_support = true
-		annotation_api = "set_error"
-		return
-
+	# In Godot 3.x, EditorInterface is not available as singleton
+	# Editor annotations are not supported in 3.x
 	has_annotation_support = false
 	annotation_api = "none"
-	print("[ComplexityAnalyzer] No annotation API available (neither add_error_annotation nor set_error)")
+	print("[ComplexityAnalyzer] Editor annotations not available in Godot 3.x")
+	return
 
 func add_complexity_annotation(script_path: String, line: int, message: String, severity: String = "warning"):
 	if not has_annotation_support:
@@ -131,4 +112,3 @@ func is_supported() -> bool:
 
 func get_annotation_api() -> String:
 	return annotation_api
-

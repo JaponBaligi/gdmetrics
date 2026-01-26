@@ -36,7 +36,7 @@ func analyze_file(file_path: String) -> Dictionary:
 
 	var version_adapter = load("res://addons/gdscript_complexity/version_adapter.gd").new()
 	
-	var tokenizer_script = "res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
 	var tokenizer = load(tokenizer_script).new()
 	var tokens = tokenizer.tokenize_file(file_path)
 	var tokenizer_errors = tokenizer.get_errors()

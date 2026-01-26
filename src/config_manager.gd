@@ -16,7 +16,13 @@ class Config:
 	
 	func _init():
 		include_patterns = ["res://**/*.gd"]
-		exclude_patterns = []
+		exclude_patterns = [
+			"res://.git/**",
+			"res://.godot/**",
+			"res://node_modules/**",
+			"res://addons/**/test/**",
+			"res://tests/**"
+		]
 		cc_config = {
 			"count_logical_operators": true,
 			"threshold_warn": 10,
@@ -58,9 +64,9 @@ func _init(config_file_path: String = ""):
 	var version_info = Engine.get_version_info()
 	var is_godot_3 = version_info.get("major", 0) == 3
 	if is_godot_3:
-		_file_helper = load("res://src/file_helper_3.gd").new()
+		_file_helper = load("res://src/gd3/file_helper.gd").new()
 	else:
-		_file_helper = load("res://src/file_helper_4.gd").new()
+		_file_helper = load("res://src/gd4/file_helper.gd").new()
 	if config_file_path != "":
 		load_config(config_file_path)
 

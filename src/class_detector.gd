@@ -37,7 +37,7 @@ func detect_classes(tokens: Array) -> Array:
 	if tokens.size() == 0:
 		return []
 	
-	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	
 	var i = 0
 	var current_class: ClassInfo = null
@@ -64,32 +64,32 @@ func detect_classes(tokens: Array) -> Array:
 		if token.type == TokenType.KEYWORD:
 			if token.value == "class_name":
 				var class_name_result = _parse_class_name_declaration(tokens, i)
-				if class_name_result.class_name != "":
+				if class_name_result["class_name"] != "":
 					if current_class != null:
-						current_class.class_name_decl = class_name_result.class_name
+						current_class.class_name_decl = class_name_result["class_name"]
 					else:
 						errors.append("class_name declaration without class definition at line %d" % token.line)
-					i = class_name_result.next_index
+					i = class_name_result["next_index"]
 					continue
 			elif token.value == "extends":
 				var extends_result = _parse_extends_declaration(tokens, i)
-				if extends_result.extends_class != "":
+				if extends_result["extends_class"] != "":
 					if current_class != null:
-						current_class.extends_class = extends_result.extends_class
+						current_class.extends_class = extends_result["extends_class"]
 					else:
 						errors.append("extends declaration without class definition at line %d" % token.line)
-					i = extends_result.next_index
+					i = extends_result["next_index"]
 					continue
 			elif token.value == "class":
 				var class_result = _parse_class_declaration(tokens, i)
-				if class_result.class_info != null:
+				if class_result["class_info"] != null:
 					if current_class != null:
 						current_class.end_line = token.line - 1
 					
-					current_class = class_result.class_info
+					current_class = class_result["class_info"]
 					class_indent = _get_line_indent(tokens, i)
 					classes.append(current_class)
-					i = class_result.next_index
+					i = class_result["next_index"]
 					continue
 		
 		i += 1
@@ -106,7 +106,7 @@ func _get_line_indent(tokens: Array, token_index: int) -> int:
 	if token_index <= 0:
 		return 0
 	
-	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	var target_line = tokens[token_index].line
 	var i = token_index - 1
 	
@@ -121,7 +121,7 @@ func _get_line_indent(tokens: Array, token_index: int) -> int:
 	return 0
 
 func _count_indent(whitespace: String) -> int:
-	if whitespace.is_empty():
+	if whitespace.length() == 0:
 		return 0
 	
 	var has_tabs = false
@@ -142,7 +142,7 @@ func _count_indent(whitespace: String) -> int:
 	return count
 
 func _parse_class_name_declaration(tokens: Array, start: int) -> Dictionary:
-	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	var i = start + 1
 	var name_value = ""
 	
@@ -158,7 +158,7 @@ func _parse_class_name_declaration(tokens: Array, start: int) -> Dictionary:
 	return {"class_name": name_value, "next_index": i}
 
 func _parse_extends_declaration(tokens: Array, start: int) -> Dictionary:
-	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	var i = start + 1
 	var extends_class = ""
 	
@@ -174,7 +174,7 @@ func _parse_extends_declaration(tokens: Array, start: int) -> Dictionary:
 	return {"extends_class": extends_class, "next_index": i}
 
 func _parse_class_declaration(tokens: Array, start: int) -> Dictionary:
-	var TokenType = load("res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
 	var i = start + 1
 	var name_value = ""
 	

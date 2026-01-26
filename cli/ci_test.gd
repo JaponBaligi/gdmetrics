@@ -97,7 +97,7 @@ func run_analysis(project_path: String, output_path: String) -> int:
 		print("ERROR: No files successfully analyzed")
 		return 1
 	
-	var report_gen_script = "res://src/report_generator_3.gd" if version_adapter.is_godot_3 else "res://src/report_generator_4.gd"
+	var report_gen_script = "res://src/gd3/report_generator.gd" if version_adapter.is_godot_3 else "res://src/gd4/report_generator.gd"
 	var report_gen = load(report_gen_script).new()
 	var report = report_gen.generate_report(project_result, default_config)
 	

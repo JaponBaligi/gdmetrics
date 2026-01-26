@@ -1,20 +1,115 @@
-; Engine Configuration File
-; This file is used for CI/testing purposes
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=4
+
+_global_script_classes=[ {
+"base": "Reference",
+"class": "AnnotationManager",
+"language": "GDScript",
+"path": "res://addons/gdscript_complexity/gd3/annotation_manager.gd"
+}, {
+"base": "Reference",
+"class": "AsyncAnalyzer",
+"language": "GDScript",
+"path": "res://addons/gdscript_complexity/gd3/async_analyzer.gd"
+}, {
+"base": "Object",
+"class": "BatchAnalyzer",
+"language": "GDScript",
+"path": "res://src/batch_analyzer.gd"
+}, {
+"base": "Object",
+"class": "CCCalculator",
+"language": "GDScript",
+"path": "res://src/cc_calculator.gd"
+}, {
+"base": "Object",
+"class": "ClassDetector",
+"language": "GDScript",
+"path": "res://src/class_detector.gd"
+}, {
+"base": "Object",
+"class": "CogComplexityCalculator",
+"language": "GDScript",
+"path": "res://src/cog_complexity_calculator.gd"
+}, {
+"base": "Control",
+"class": "ComplexityDockPanel",
+"language": "GDScript",
+"path": "res://addons/gdscript_complexity/gd3/dock_panel.gd"
+}, {
+"base": "Object",
+"class": "ConfidenceCalculator",
+"language": "GDScript",
+"path": "res://src/confidence_calculator.gd"
+}, {
+"base": "AcceptDialog",
+"class": "ConfigDialog",
+"language": "GDScript",
+"path": "res://addons/gdscript_complexity/gd3/config_dialog.gd"
+}, {
+"base": "Object",
+"class": "ConfigManager",
+"language": "GDScript",
+"path": "res://src/config_manager.gd"
+}, {
+"base": "Object",
+"class": "ControlFlowDetector",
+"language": "GDScript",
+"path": "res://src/control_flow_detector.gd"
+}, {
+"base": "Object",
+"class": "FunctionDetector",
+"language": "GDScript",
+"path": "res://src/function_detector.gd"
+}, {
+"base": "Object",
+"class": "GDScriptTokenizer",
+"language": "GDScript",
+"path": "res://src/gd3/tokenizer.gd"
+}, {
+"base": "Object",
+"class": "VersionAdapter",
+"language": "GDScript",
+"path": "res://addons/gdscript_complexity/version_adapter.gd"
+} ]
+_global_script_class_icons={
+"AnnotationManager": "",
+"AsyncAnalyzer": "",
+"BatchAnalyzer": "",
+"CCCalculator": "",
+"ClassDetector": "",
+"CogComplexityCalculator": "",
+"ComplexityDockPanel": "",
+"ConfidenceCalculator": "",
+"ConfigDialog": "",
+"ConfigManager": "",
+"ControlFlowDetector": "",
+"FunctionDetector": "",
+"GDScriptTokenizer": "",
+"VersionAdapter": ""
+}
 
 [application]
 
 config/name="GDScript Complexity Analyzer"
-run/main_scene=""
-config/features=PackedStringArray("4.2", "Forward Plus")
-
-[autoload]
+config/features=PoolStringArray( "4.2", "Forward Plus" )
 
 [display]
 
 window/size/viewport_width=1152
 window/size/viewport_height=648
 
+[editor_plugins]
+
+enabled=PoolStringArray( "res://addons/gdscript_complexity/plugin.cfg" )
+
 [rendering]
 
 renderer/rendering_method="forward_plus"
-
