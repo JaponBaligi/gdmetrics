@@ -33,10 +33,18 @@ class ProjectResult:
 
 var project_result = null  # ProjectResult - nested class
 var version_adapter = null
+var cache_manager = null
 
 func analyze_project(root_path: String, config, adapter = null):  # -> ProjectResult - nested class
 	project_result = ProjectResult.new()
 	version_adapter = adapter
+	
+	# Initialize cache manager if caching is enabled
+	if config.performance_config.get("enable_caching", false):
+		var cache_path = config.performance_config.get("cache_path", ".gdcomplexity_cache")
+		cache_manager = load("res://src/cache_manager.gd").new(cache_path, true)
+	else:
+		cache_manager = null
 	
 	var discovery_script = "res://src/gd3/file_discovery.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/gd4/file_discovery.gd"
 	var discovery = load(discovery_script).new()
@@ -47,6 +55,10 @@ func analyze_project(root_path: String, config, adapter = null):  # -> ProjectRe
 	if files.size() == 0:
 		project_result.errors.append("No files found matching include patterns")
 		return project_result
+	
+	# Cleanup orphaned cache entries if caching is enabled
+	if cache_manager != null:
+		cache_manager.cleanup_orphaned_entries(files)
 	
 	var file_results: Array = []
 	var total_cc = 0
@@ -90,6 +102,15 @@ func _analyze_file(file_path: String, config):  # -> FileResult - nested class
 	var result = FileResult.new()
 	result.file_path = file_path
 	
+	# Try to load from cache first
+	if cache_manager != null:
+		var cached_data = cache_manager.get_cached_result(file_path, config)
+		if cached_data.size() > 0:
+			# Cache hit - restore result from cache
+			result = _restore_file_result_from_cache(cached_data)
+			return result
+	
+	# Cache miss or caching disabled - perform full analysis
 	var tokenizer = load(_get_tokenizer_script()).new()
 	var tokens = tokenizer.tokenize_file(file_path)
 	var tokenizer_errors = tokenizer.get_errors()
@@ -97,11 +118,17 @@ func _analyze_file(file_path: String, config):  # -> FileResult - nested class
 	if tokenizer_errors.size() > 0:
 		result.errors = tokenizer_errors
 		result.success = false
+		# Store failed result in cache (so we don't retry failed files)
+		if cache_manager != null:
+			cache_manager.store_result(file_path, config, result)
 		return result
 	
 	if tokens.size() == 0:
 		result.errors.append("No tokens found")
 		result.success = false
+		# Store failed result in cache
+		if cache_manager != null:
+			cache_manager.store_result(file_path, config, result)
 		return result
 	
 	var detector = load("res://src/control_flow_detector.gd").new()
@@ -131,6 +158,27 @@ func _analyze_file(file_path: String, config):  # -> FileResult - nested class
 	result.confidence = confidence_result.score
 	
 	result.success = true
+	
+	# Store successful result in cache
+	if cache_manager != null:
+		cache_manager.store_result(file_path, config, result)
+	
+	return result
+
+# Restore FileResult from cached dictionary data
+func _restore_file_result_from_cache(cached_data: Dictionary) -> FileResult:
+	var result = FileResult.new()
+	result.file_path = cached_data.get("file_path", "")
+	result.success = cached_data.get("success", false)
+	result.cc = cached_data.get("cc", 0)
+	result.cog = cached_data.get("cog", 0)
+	result.confidence = cached_data.get("confidence", 0.0)
+	result.functions = cached_data.get("functions", [])
+	result.classes = cached_data.get("classes", [])
+	result.errors = cached_data.get("errors", [])
+	result.cc_breakdown = cached_data.get("cc_breakdown", {})
+	result.cog_breakdown = cached_data.get("cog_breakdown", {})
+	result.per_function_cog = cached_data.get("per_function_cog", {})
 	return result
 
 func _calculate_worst_offenders(file_results: Array):

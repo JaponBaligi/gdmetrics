@@ -19,6 +19,7 @@ test_results.json
 
 # Cache and logs
 .complexity_cache/
+.gdcomplexity_cache/
 *.cache
 *.log
 parse_errors.log
