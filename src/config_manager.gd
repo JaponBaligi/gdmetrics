@@ -1,4 +1,3 @@
-# class_name ConfigManager  # Commented out to avoid parse-time cascade in Godot 4.x
 extends Object
 
 # Configuration manager
@@ -76,14 +75,9 @@ func _init(config_file_path: String = ""):
 	_error_codes = load("res://src/error_codes.gd").new()
 	var version_info = Engine.get_version_info()
 	_is_godot_3 = version_info.get("major", 0) == 3
-	# Load file helper dynamically - lazy load to avoid parse-time cascade
-	# In Godot 4.x, use native APIs directly to avoid loading gd3 files
 	if _is_godot_3:
-		# Only load gd3 file helper in Godot 3.x (lazy load)
-		# Don't load here to avoid parse-time cascade in 4.x
 		pass
 	else:
-		# Load gd4 file helper in Godot 4.x
 		var helper_script = load("res://src/gd4/file_helper.gd")
 		if helper_script != null:
 			_file_helper = helper_script.new()
@@ -91,7 +85,6 @@ func _init(config_file_path: String = ""):
 		load_config(config_file_path)
 
 func _ensure_file_helper():
-	# Lazy load file helper to avoid parse-time cascade in Godot 3.x
 	if _file_helper != null:
 		return
 	if _is_godot_3:
@@ -111,7 +104,6 @@ func load_config(config_file_path: String) -> bool:
 	
 	var json_text: String = ""
 	
-	# Use file helper for both 3.x and 4.x to avoid parse-time API issues
 	if _file_helper == null:
 		errors.append(_format_error("CONFIG_HELPER_MISSING", "File helper not available (using defaults)"))
 		return false
@@ -128,7 +120,6 @@ func load_config(config_file_path: String) -> bool:
 	json_text = f.get_as_text()
 	_file_helper.close_file(f)
 	
-	# Parse JSON - Godot 4.x only in this testing project
 	var json = JSON.new()
 	var parse_result = json.parse(json_text)
 	if parse_result != OK:

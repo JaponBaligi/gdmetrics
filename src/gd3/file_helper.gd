@@ -1,6 +1,4 @@
 # File operations helper for Godot 3.5
-# Used by tokenizer and other core files
-
 extends Object
 
 func file_exists(file_path: String) -> bool:

@@ -108,8 +108,6 @@ func _setup_ui():
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button_row.add_child(spacer)
 	
-	# In Godot 3.x, AcceptDialog doesn't have get_cancel_button/get_ok_button
-	# Connect to confirmed signal for OK button
 	connect("confirmed", self, "_on_ok_pressed")
 
 func _create_group(title: String) -> VBoxContainer:
@@ -118,8 +116,6 @@ func _create_group(title: String) -> VBoxContainer:
 	
 	var label = Label.new()
 	label.text = title
-	# In Godot 3.x, add_font_size_override doesn't exist - use default font size
-	# label.add_font_size_override("font_size", 14)  # Not available in 3.x
 	group.add_child(label)
 	
 	return group

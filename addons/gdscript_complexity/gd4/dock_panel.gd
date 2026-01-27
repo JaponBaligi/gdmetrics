@@ -109,7 +109,6 @@ func _apply_editor_theme():
 	if not Engine.is_editor_hint():
 		return
 	
-	# In Godot 4.x, EditorInterface is accessed directly as a singleton
 	var editor_interface = EditorInterface
 	if editor_interface == null:
 		return

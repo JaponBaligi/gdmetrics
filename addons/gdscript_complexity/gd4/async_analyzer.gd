@@ -1,7 +1,5 @@
 @tool
 extends RefCounted
-# class_name AsyncAnalyzer  # Commented out to avoid parse-time cascade
-
 # Processes files in batches without blocking UI
 
 signal progress_updated(current: int, total: int, file_path: String)

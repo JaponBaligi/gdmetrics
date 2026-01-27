@@ -1,7 +1,4 @@
 # File operations helper for Godot 4.x
-# Used by tokenizer and other core files
-# Note: This file uses 4.x APIs but extends Object for 3.x parse compatibility
-
 extends Object
 
 func file_exists(file_path: String) -> bool:

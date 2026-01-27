@@ -1,6 +1,4 @@
 extends Object
-# class_name BatchAnalyzer  # Commented out to avoid parse-time cascade
-
 # Batch analyzer
 # processes multiple files and aggregates results
 
@@ -36,7 +34,7 @@ class ProjectResult:
 	var total_errors: int = 0
 	var performance: Dictionary = {}
 
-var project_result = null  # ProjectResult - nested class
+var project_result = null
 var version_adapter = null
 var cache_manager = null
 var logger = null
@@ -52,7 +50,7 @@ var _confidence_calc_instance = null
 var _time_helper = null
 var _time_helper_path: String = ""
 
-func analyze_project(root_path: String, config, adapter = null):  # -> ProjectResult - nested class
+func analyze_project(root_path: String, config, adapter = null):
 	project_result = ProjectResult.new()
 	version_adapter = adapter
 	_error_codes = load("res://src/error_codes.gd").new()
@@ -142,7 +140,7 @@ func _ensure_tools():
 	_confidence_calc_instance = load("res://src/confidence_calculator.gd").new()
 	_tools_ready = true
 
-func _analyze_file(file_path: String, config, profiling: bool = false):  # -> FileResult - nested class
+func _analyze_file(file_path: String, config, profiling: bool = false):
 	var result = FileResult.new()
 	result.file_path = file_path
 	_ensure_tools()
@@ -341,7 +339,7 @@ func _sort_by_cog(arr: Array):
 			arr[best] = tmp
 		i += 1
 
-func get_project_result():  # -> ProjectResult - nested class
+func get_project_result():
 	return project_result
 
 func _ensure_logger(config):
@@ -363,10 +361,9 @@ func _set_error_summary(file_results: Array):
 	project_result.error_severity_summary = summary.by_severity
 	project_result.total_errors = summary.total
 
-# Helper methods to create nested class instances when class_name is commented out
-static func create_file_result():  # -> FileResult - nested class
+static func create_file_result():
 	return FileResult.new()
 
-static func create_project_result():  # -> ProjectResult - nested class
+static func create_project_result():
 	return ProjectResult.new()
 

@@ -83,7 +83,6 @@ func start_analysis(root_path: String, config_data: ConfigManager.Config, adapte
 		is_running = false
 		return
 	
-	# In Godot 3.x, process one file at a time to prevent UI freezing
 	batch_size = 1
 	
 	print("[AsyncAnalyzer] Creating project_result...")

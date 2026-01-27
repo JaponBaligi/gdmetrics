@@ -368,7 +368,6 @@ func cleanup_orphaned_entries(valid_files: Array) -> int:
 	return cleaned
 
 # Remove old cache entries (TTL-based cleanup)
-# Note: Uses ticks (milliseconds) for compatibility, so max_age is in milliseconds
 func cleanup_old_entries(max_age_msec: int = 604800000) -> int:  # Default: 7 days in milliseconds
 	if not enabled:
 		return 0

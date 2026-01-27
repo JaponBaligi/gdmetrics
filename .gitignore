@@ -74,14 +74,15 @@ yarn-error.log
 *.backup
 tmp/
 temp/
-after-conflict.md
 
+# not related to the project, will be deleted later 
+after-conflict.md
 
 # Config files
 !**/config.json
 !**/package.json
 !**/tsconfig.json
 
-# Docs, will release later
+# Docs
 docs/PLAN.md
 docs/PROGRESS.md

@@ -1,6 +1,5 @@
 @tool
 extends RefCounted
-# class_name AnnotationManager  # Commented out to avoid parse-time cascade
 
 # Adds complexity warnings to script editor
 
@@ -20,7 +19,6 @@ func _detect_annotation_support():
 		annotation_api = "none"
 		return
 	
-	# In Godot 4.x, EditorInterface is accessed directly as a singleton
 	var editor_interface = EditorInterface
 	if editor_interface == null:
 		has_annotation_support = false

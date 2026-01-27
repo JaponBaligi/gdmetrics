@@ -80,7 +80,6 @@ func _setup_ui():
 
 	status_label = Label.new()
 	status_label.text = "Ready"
-	# In Godot 3.x, autowrap_mode uses different constants - just enable autowrap
 	status_label.autowrap = true
 	vbox.add_child(status_label)
 
@@ -99,7 +98,6 @@ func _setup_ui():
 	results_tree.set_column_expand(2, false)
 	results_tree.set_column_expand(3, false)
 	results_tree.set_column_min_width(0, 220)
-	# In Godot 3.x, use set_column_min_width instead of set_column_custom_minimum_width
 	results_tree.set_column_min_width(1, 60)
 	results_tree.set_column_min_width(2, 60)
 	results_tree.set_column_min_width(3, 80)
@@ -112,9 +110,6 @@ func _apply_editor_theme():
 	if not Engine.is_editor_hint():
 		return
 	
-	# In Godot 3.x, EditorInterface is accessed via EditorPlugin, not as singleton
-	# We'll skip theme application in 3.x as it requires EditorPlugin reference
-	# The UI will use default theme
 	pass
 
 func _on_analyze_pressed():

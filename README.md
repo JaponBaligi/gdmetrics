@@ -28,14 +28,14 @@ This repository uses separate branches for different Godot versions:
 
 **For Godot 3.x:**
 ```bash
-git clone <https://github.com/JaponBaligi/gdmetrics>
+git clone https://github.com/JaponBaligi/gdmetrics
 cd godot_cc
 # Already on main branch, or: git checkout main
 ```
 
 **For Godot 4.x:**
 ```bash
-git clone <https://github.com/JaponBaligi/gdmetrics>
+git clone https://github.com/JaponBaligi/gdmetrics
 cd godot_cc
 git checkout godot4
 ```

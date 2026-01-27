@@ -2,8 +2,6 @@ tool
 extends Reference
 class_name AnnotationManager
 
-# Adds complexity warnings to script editor (Godot 3.x version)
-
 var script_editor: Object = null
 var has_annotation_support: bool = false
 var annotation_api: String = "none" 
@@ -20,8 +18,6 @@ func _detect_annotation_support():
 		annotation_api = "none"
 		return
 	
-	# In Godot 3.x, EditorInterface is not available as singleton
-	# Editor annotations are not supported in 3.x
 	has_annotation_support = false
 	annotation_api = "none"
 	print("[ComplexityAnalyzer] Editor annotations not available in Godot 3.x")
