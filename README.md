@@ -1,5 +1,7 @@
 # GDScript Complexity Analyzer
 
+***bad code, target PCs / optimized code, target electricity.***
+
 A Godot EditorPlugin that analyzes GDScript code complexity using Cyclomatic Complexity (CC) and Cognitive Complexity (C-COG) metrics.
 
 ## Features
@@ -237,3 +239,8 @@ This is a pre-Phase 5 project. Core functionality is complete, but testing and p
 - [Progress Tracking](docs/PROGRESS.md) - Implementation status
 - [Compatibility Matrix](docs/COMPATIBILITY.md) - Version support details
 - [Before Phase 5](docs/before5.md) - Pre-Phase 5 roadmap
+
+
+## Special Thanks
+
+***Special thanks to r2d2meuleu for starring my project — this is my first star***

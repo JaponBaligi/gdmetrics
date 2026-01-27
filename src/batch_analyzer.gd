@@ -34,6 +34,7 @@ class ProjectResult:
 	var error_summary: Dictionary = {}
 	var error_severity_summary: Dictionary = {}
 	var total_errors: int = 0
+	var performance: Dictionary = {}
 
 var project_result = null  # ProjectResult - nested class
 var version_adapter = null
@@ -48,12 +49,19 @@ var _class_detector_instance = null
 var _cc_calc_instance = null
 var _cog_calc_instance = null
 var _confidence_calc_instance = null
+var _time_helper = null
+var _time_helper_path: String = ""
 
 func analyze_project(root_path: String, config, adapter = null):  # -> ProjectResult - nested class
 	project_result = ProjectResult.new()
 	version_adapter = adapter
 	_error_codes = load("res://src/error_codes.gd").new()
 	_ensure_logger(config)
+	project_result.performance = {}
+	var profiling = false
+	if config.performance_config.has("enable_profiling"):
+		profiling = config.performance_config["enable_profiling"]
+	var total_start = _now_msec()
 	
 	# Initialize cache manager if caching is enabled
 	if config.performance_config.get("enable_caching", false):
@@ -85,7 +93,10 @@ func analyze_project(root_path: String, config, adapter = null):  # -> ProjectRe
 	
 	for i in range(files.size()):
 		var file_path = files[i]
-		var file_result = _analyze_file(file_path, config)
+		var file_start = _now_msec()
+		var file_result = _analyze_file(file_path, config, profiling)
+		if profiling:
+			_accumulate_perf("total_ms", _now_msec() - file_start)
 		file_results.append(file_result)
 		
 		if file_result.success:
@@ -108,6 +119,8 @@ func analyze_project(root_path: String, config, adapter = null):  # -> ProjectRe
 	_set_error_summary(file_results)
 	
 	_calculate_worst_offenders(file_results)
+	if profiling:
+		_accumulate_perf("total_run_ms", _now_msec() - total_start)
 	
 	return project_result
 
@@ -128,7 +141,7 @@ func _ensure_tools():
 	_confidence_calc_instance = load("res://src/confidence_calculator.gd").new()
 	_tools_ready = true
 
-func _analyze_file(file_path: String, config):  # -> FileResult - nested class
+func _analyze_file(file_path: String, config, profiling: bool = false):  # -> FileResult - nested class
 	var result = FileResult.new()
 	result.file_path = file_path
 	_ensure_tools()
@@ -143,7 +156,10 @@ func _analyze_file(file_path: String, config):  # -> FileResult - nested class
 	
 	# Cache miss or caching disabled - perform full analysis
 	var tokenizer = _tokenizer_class.new()
+	var t0 = _now_msec()
 	var tokens = tokenizer.tokenize_file(file_path)
+	if profiling:
+		_accumulate_perf("tokenize_ms", _now_msec() - t0)
 	var tokenizer_errors = tokenizer.get_errors()
 	
 	if tokenizer_errors.size() > 0:
@@ -164,6 +180,7 @@ func _analyze_file(file_path: String, config):  # -> FileResult - nested class
 			cache_manager.store_result(file_path, config, result)
 		return result
 	
+	var d0 = _now_msec()
 	var control_flow_nodes = _detector_instance.detect_control_flow(tokens, version_adapter)
 	var detector_errors = _detector_instance.get_errors()
 	if detector_errors.size() > 0:
@@ -177,7 +194,10 @@ func _analyze_file(file_path: String, config):  # -> FileResult - nested class
 	var class_errors = _class_detector_instance.get_errors()
 	if class_errors.size() > 0:
 		result.errors += class_errors
+	if profiling:
+		_accumulate_perf("detect_ms", _now_msec() - d0)
 	
+	var c0 = _now_msec()
 	var cc = _cc_calc_instance.calculate_cc(control_flow_nodes)
 	result.cc = cc
 	result.cc_breakdown = _cc_calc_instance.get_breakdown()
@@ -193,6 +213,8 @@ func _analyze_file(file_path: String, config):  # -> FileResult - nested class
 		confidence_weights = config.parser_config["confidence_weights"]
 	var confidence_result = _confidence_calc_instance.calculate_confidence(tokens, tokenizer_errors, version_adapter, confidence_weights)
 	result.confidence = confidence_result.score
+	if profiling:
+		_accumulate_perf("calc_ms", _now_msec() - c0)
 	
 	result.success = true
 	
@@ -234,6 +256,32 @@ func _calculate_per_function_cc(control_flow_nodes: Array, functions: Array) -> 
 		per_function[func_info.name] = func_cc
 	
 	return per_function
+
+func _accumulate_perf(key: String, value: int) -> void:
+	if not project_result.performance.has(key):
+		project_result.performance[key] = 0
+	project_result.performance[key] += value
+
+func _now_msec() -> int:
+	var helper = _ensure_time_helper()
+	if helper == null:
+		return 0
+	return helper.get_msec()
+
+func _ensure_time_helper():
+	if _time_helper != null:
+		return _time_helper
+	_time_helper_path = "res://src/gd3/time_helper.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/gd4/time_helper.gd"
+	var helper_resource = load(_time_helper_path)
+	if helper_resource == null:
+		return null
+	_time_helper = helper_resource.new()
+	_debug_time_helper()
+	return _time_helper
+
+func _debug_time_helper():
+	if Engine.is_editor_hint():
+		print("[ComplexityAnalyzer] Batch time helper: %s" % _time_helper_path)
 
 func _calculate_worst_offenders(file_results: Array):
 	var cc_sorted = []

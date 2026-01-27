@@ -51,7 +51,8 @@ class Config:
 		performance_config = {
 			"enable_caching": false,
 			"cache_path": "res://.complexity_cache",
-			"incremental_analysis": false
+			"incremental_analysis": false,
+			"enable_profiling": false
 		}
 		telemetry_config = {
 			"enable_anonymous_reporting": false
@@ -292,6 +293,10 @@ func _parse_performance_config(perf_data: Dictionary):
 	if perf_data.has("incremental_analysis"):
 		if perf_data["incremental_analysis"] is bool:
 			config.performance_config["incremental_analysis"] = perf_data["incremental_analysis"]
+	
+	if perf_data.has("enable_profiling"):
+		if perf_data["enable_profiling"] is bool:
+			config.performance_config["enable_profiling"] = perf_data["enable_profiling"]
 
 func _parse_telemetry_config(telemetry_data: Dictionary):
 	if telemetry_data.has("enable_anonymous_reporting"):

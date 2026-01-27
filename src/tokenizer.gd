@@ -87,15 +87,12 @@ func tokenize_file(file_path: String) -> Array:
 		else:
 			file_helper = load("res://src/gd4/file_helper.gd").new()
 	
-	var file_exists = file_helper.file_exists(file_path)
-	
-	if not file_exists:
-		_append_error("FILE_NOT_FOUND", "File not found: %s" % file_path)
-		return []
-	
 	var file = file_helper.open_read(file_path)
 	if file == null:
-		_append_error("FILE_OPEN_FAILED", "Failed to open file: %s" % file_path)
+		if not file_helper.file_exists(file_path):
+			_append_error("FILE_NOT_FOUND", "File not found: %s" % file_path)
+		else:
+			_append_error("FILE_OPEN_FAILED", "Failed to open file: %s" % file_path)
 		return []
 	
 	var line_number = 1

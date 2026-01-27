@@ -14,6 +14,8 @@ var level: String = LEVEL_INFO
 
 var _file_helper = null
 var _is_godot_3: bool = false
+var _time_helper = null
+var _time_helper_path: String = ""
 
 var _level_order = {
 	LEVEL_ERROR: 0,
@@ -90,9 +92,22 @@ func _get_error_codes():
 	return load("res://src/error_codes.gd").new()
 
 func _get_timestamp() -> String:
-	var helper_script = "res://src/gd3/time_helper.gd" if _is_godot_3 else "res://src/gd4/time_helper.gd"
-	var helper_resource = load(helper_script)
-	if helper_resource == null:
+	var helper = _ensure_time_helper()
+	if helper == null:
 		return ""
-	var helper = helper_resource.new()
 	return helper.get_timestamp()
+
+func _ensure_time_helper():
+	if _time_helper != null:
+		return _time_helper
+	_time_helper_path = "res://src/gd3/time_helper.gd" if _is_godot_3 else "res://src/gd4/time_helper.gd"
+	var helper_resource = load(_time_helper_path)
+	if helper_resource == null:
+		return null
+	_time_helper = helper_resource.new()
+	_debug_time_helper()
+	return _time_helper
+
+func _debug_time_helper():
+	if Engine.is_editor_hint():
+		print("[ComplexityAnalyzer] Time helper: %s (godot3=%s)" % [_time_helper_path, str(_is_godot_3)])

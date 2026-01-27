@@ -35,7 +35,8 @@
 	"performance": {
 		"enable_caching": true,
 		"cache_path": ".gdcomplexity_cache",
-		"incremental_analysis": true
+		"incremental_analysis": true,
+		"enable_profiling": false
 	},
 	"telemetry": {
 		"enable_anonymous_reporting": false

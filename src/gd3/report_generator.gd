@@ -32,7 +32,8 @@ func generate_report(project_result, config) -> Dictionary:
 			},
 			"error_summary": project_result.error_summary,
 			"error_severity_summary": project_result.error_severity_summary,
-			"total_errors": project_result.total_errors
+			"total_errors": project_result.total_errors,
+			"performance": project_result.performance
 		},
 		"worst_offenders": {
 			"cc": _format_worst_offenders(project_result.worst_cc_files, "cc"),

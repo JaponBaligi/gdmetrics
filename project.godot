@@ -7,3 +7,11 @@
 ;   param=value ; assign values to parameters
 
 config_version=5
+
+[application]
+
+config/features=PackedStringArray("4.2")
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gdscript_complexity/plugin.cfg")
