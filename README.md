@@ -252,6 +252,9 @@ godot --headless --script tests/test_cog_calculator.gd
 # Confidence calculator tests
 godot --headless --script tests/test_confidence_calculator.gd
 
+# Annotation manager tests
+godot --headless --script tests/test_annotation_manager.gd
+
 # Verify fixtures
 godot --headless --script tests/verify_cc_cog.gd
 
@@ -281,19 +284,13 @@ Confidence scores estimate parse reliability. Use `tests/validate_confidence.gd`
 
 See [LICENSE](LICENSE) file for details.
 
-## Contributing
-
-This is a pre-Phase 5 project. Core functionality is complete, but testing and polish work continues. See [docs/PROGRESS.md](docs/PROGRESS.md) for current status.
-
 ## Documentation
 
-- [Branch Strategy](docs/BRANCH_STRATEGY.md) - Branch structure and version support
 - [User Guide](docs/USER_GUIDE.md) - Installation, configuration, usage, troubleshooting
 - [Technical Documentation](docs/TECHNICAL.md) - Architecture and parser details
-- [Progress Tracking](docs/PROGRESS.md) - Implementation status
 - [Compatibility Matrix](docs/COMPATIBILITY.md) - Version support details
 - [Breaking Changes Log](docs/BREAKING_CHANGES.md) - Release-impacting changes
-- [Before Phase 5](docs/before5.md) - Pre-Phase 5 roadmap
+- [Error Codes](docs/ERROR_CODES.md) - Standardized error codes and severities
 
 
 ## Special Thanks
