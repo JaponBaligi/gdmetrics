@@ -8,6 +8,7 @@ var script_editor: Object = null
 var has_annotation_support: bool = false
 var annotation_api: String = "none" 
 var version_adapter: VersionAdapter = null
+var _supported_severities = ["error", "warning", "info"]
 
 func _init(adapter: VersionAdapter = null):
 	version_adapter = adapter
@@ -27,6 +28,10 @@ func _detect_annotation_support():
 	return
 
 func add_complexity_annotation(script_path: String, line: int, message: String, severity: String = "warning"):
+	severity = _normalize_severity(severity)
+	if script_path == "" or line < 1:
+		_fallback_log(script_path, line, "Invalid annotation target", "warning")
+		return
 	if not has_annotation_support:
 		_fallback_log(script_path, line, message, severity)
 		return
@@ -99,6 +104,8 @@ func clear_annotations(script_path: String):
 		script_editor.clear_annotations(script_path)
 	elif annotation_api == "set_error" and script_editor.has_method("clear_errors"):
 		script_editor.clear_errors(script_path)
+	else:
+		_fallback_log(script_path, 1, "clear_annotations not supported", "info")
 
 func _fallback_log(script_path: String, line: int, message: String, severity: String):
 	var log_message = "[ComplexityAnalyzer] %s:%d - %s: %s" % [script_path, line, severity.to_upper(), message]
@@ -112,3 +119,8 @@ func is_supported() -> bool:
 
 func get_annotation_api() -> String:
 	return annotation_api
+
+func _normalize_severity(severity: String) -> String:
+	if _supported_severities.has(severity):
+		return severity
+	return "warning"
