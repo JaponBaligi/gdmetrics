@@ -95,6 +95,7 @@ func _process_next_batch():
 		_finalize_results()
 		is_running = false
 		analysis_complete.emit(project_result)
+		_cleanup()
 	else:
 		call_deferred("_process_next_batch")
 
@@ -183,6 +184,23 @@ func _finalize_results():
 	
 	_calculate_worst_offenders()
 	_set_error_summary()
+
+func _cleanup():
+	files = []
+	project_result = null
+	batch_analyzer = null
+	config = null
+	version_adapter = null
+	logger = null
+	_error_codes = null
+	_tokenizer_class = null
+	_detector_instance = null
+	_function_detector_instance = null
+	_class_detector_instance = null
+	_cc_calc_instance = null
+	_cog_calc_instance = null
+	_confidence_calc_instance = null
+	_tools_ready = false
 
 func _calculate_worst_offenders():
 	var cc_sorted = []

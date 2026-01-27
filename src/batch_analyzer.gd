@@ -121,6 +121,7 @@ func analyze_project(root_path: String, config, adapter = null):  # -> ProjectRe
 	_calculate_worst_offenders(file_results)
 	if profiling:
 		_accumulate_perf("total_run_ms", _now_msec() - total_start)
+	_reset_tools()
 	
 	return project_result
 
@@ -256,6 +257,16 @@ func _calculate_per_function_cc(control_flow_nodes: Array, functions: Array) -> 
 		per_function[func_info.name] = func_cc
 	
 	return per_function
+
+func _reset_tools():
+	_tokenizer_class = null
+	_detector_instance = null
+	_function_detector_instance = null
+	_class_detector_instance = null
+	_cc_calc_instance = null
+	_cog_calc_instance = null
+	_confidence_calc_instance = null
+	_tools_ready = false
 
 func _accumulate_perf(key: String, value: int) -> void:
 	if not project_result.performance.has(key):

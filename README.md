@@ -108,6 +108,10 @@ Create a `complexity_config.json` file in your project root (or refactor `comple
 }
 ```
 
+## Known Issues
+
+- **Editor shutdown leak warnings**: Godot may print `ObjectDB instances leaked at exit` with `GDScript` resources (e.g. `logger.gd`, `batch_analyzer.gd`). These are engine-level script cache artifacts seen in the editor after plugin use. They do not affect analysis output. If needed, run the editor with `--verbose` and capture the shutdown log for investigation.
+
 ### Caching System
 
 The analyzer includes a content-based caching system to speed up subsequent analyses:

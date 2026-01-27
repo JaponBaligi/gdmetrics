@@ -156,9 +156,59 @@ func _exit_tree():
 	annotation_manager = null
 	version_adapter = null
 	config_manager = null
+	last_project_result = null
 	if logger != null:
 		logger.log_message("info", "Plugin cleaned up")
 	logger = null
+	_unload_script_cache()
+	_clear_script_caches()
+	_clear_resource_cache()
+
+func _unload_script_cache():
+	var paths = [
+		"res://src/batch_analyzer.gd",
+		"res://src/control_flow_detector.gd",
+		"res://src/function_detector.gd",
+		"res://src/class_detector.gd",
+		"res://src/cc_calculator.gd",
+		"res://src/cog_complexity_calculator.gd",
+		"res://src/confidence_calculator.gd",
+		"res://src/config_manager.gd",
+		"res://src/cache_manager.gd",
+		"res://src/logger.gd",
+		"res://src/error_codes.gd",
+		"res://src/error_summary.gd",
+		"res://src/gd3/file_helper.gd",
+		"res://src/gd4/file_helper.gd",
+		"res://src/gd3/time_helper.gd",
+		"res://src/gd4/time_helper.gd",
+		"res://addons/gdscript_complexity/version_adapter.gd",
+		"res://addons/gdscript_complexity/gd3/async_analyzer.gd",
+		"res://addons/gdscript_complexity/gd4/async_analyzer.gd",
+		"res://addons/gdscript_complexity/gd3/annotation_manager.gd",
+		"res://addons/gdscript_complexity/gd4/annotation_manager.gd",
+		"res://addons/gdscript_complexity/gd3/dock_panel.gd",
+		"res://addons/gdscript_complexity/gd4/dock_panel.gd",
+		"res://addons/gdscript_complexity/gd3/config_dialog.gd",
+		"res://addons/gdscript_complexity/gd4/config_dialog.gd"
+	]
+	for path in paths:
+		_unload_cached(path)
+
+func _unload_cached(path: String):
+	if not ResourceLoader.has_method("has_cached") or not ResourceLoader.has_method("unload_cached"):
+		return
+	var has_cached = ResourceLoader.call("has_cached", path)
+	if has_cached:
+		ResourceLoader.call("unload_cached", path)
+
+func _clear_script_caches():
+	# ScriptServer is not guaranteed to be available in editor runtime.
+	pass
+
+func _clear_resource_cache():
+	if ResourceLoader.has_method("clear_cache"):
+		ResourceLoader.call("clear_cache")
 
 func _get_plugin_name() -> String:
 	return "GDScript Complexity Analyzer"
