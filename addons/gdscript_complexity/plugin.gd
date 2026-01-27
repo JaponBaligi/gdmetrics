@@ -10,25 +10,27 @@ var version_adapter = null  # VersionAdapter - loaded dynamically
 var godot_version: Dictionary = {}
 var process_timer: Timer = null  # Timer for deferred processing in Godot 3.x
 var last_project_result = null
+var logger = null
 
 func _enter_tree():
-	print("[ComplexityAnalyzer] Plugin entering tree...")
+	logger = load("res://src/logger.gd").new()
+	logger.log_message("info", "Plugin entering tree")
 	
 	godot_version = Engine.get_version_info()
-	print("[ComplexityAnalyzer] Godot version: %d.%d.%d" % [
+	logger.log_message("info", "Godot version: %d.%d.%d" % [
 		godot_version["major"], godot_version["minor"], godot_version["patch"]
 	])
 	
 	version_adapter = load("res://addons/gdscript_complexity/version_adapter.gd").new()
 	
 	if not version_adapter.is_supported_version():
-		push_error("[ComplexityAnalyzer] Unsupported Godot version: %s" % version_adapter.get_version_string())
+		logger.log_with_code("error", "ANALYSIS_FAILED", "Unsupported Godot version: %s" % version_adapter.get_version_string())
 		return
 	
-	print("[ComplexityAnalyzer] Version adapter initialized: %s" % version_adapter.get_version_string())
+	logger.log_message("info", "Version adapter initialized: %s" % version_adapter.get_version_string())
 	
 	if godot_version["major"] < 4:
-		print("[ComplexityAnalyzer] Running in Godot 3.x mode (best-effort support)")
+		logger.log_message("info", "Running in Godot 3.x mode (best-effort support)")
 	
 	config_manager = load("res://src/config_manager.gd").new()
 	
@@ -36,8 +38,10 @@ func _enter_tree():
 	if not config_manager.load_config(config_path):
 		if config_manager.has_errors():
 			for error in config_manager.get_errors():
-				print("[ComplexityAnalyzer] Config warning: %s" % error)
-		print("[ComplexityAnalyzer] Using default configuration")
+				logger.log_message("warning", "Config warning: %s" % error)
+		logger.log_message("warning", "Using default configuration")
+	
+	logger.configure(config_manager.get_config().logging_config)
 
 	var is_godot_3 = godot_version["major"] == 3
 	var dock_panel_script: String
@@ -71,12 +75,12 @@ func _enter_tree():
 		annotation_manager_script = "res://addons/gdscript_complexity/gd4/annotation_manager.gd"
 	annotation_manager = load(annotation_manager_script).new(version_adapter)
 	if annotation_manager.is_supported():
-		print("[ComplexityAnalyzer] Editor annotations supported (%s)" % annotation_manager.get_annotation_api())
+		logger.log_message("info", "Editor annotations supported (%s)" % annotation_manager.get_annotation_api())
 	else:
-		print("[ComplexityAnalyzer] Editor annotations not available, using console logging")
+		logger.log_message("info", "Editor annotations not available, using console logging")
 	
 	if version_adapter != null and not version_adapter.supports_editor_annotations():
-		print("[ComplexityAnalyzer] Editor annotations disabled for Godot 3.x")
+		logger.log_message("info", "Editor annotations disabled for Godot 3.x")
 	
 	var config_dialog_script: String
 	if is_godot_3:
@@ -93,28 +97,28 @@ func _enter_tree():
 	# Use Godot 4.x Callable syntax (required for 4.x parser)
 	# Verify method exists before connecting (helps debug connection issues)
 	if not has_method("_on_analyze_requested"):
-		push_error("[ComplexityAnalyzer] ERROR: _on_analyze_requested method not found!")
+		logger.log_with_code("error", "ANALYSIS_FAILED", "_on_analyze_requested method not found")
 	else:
 		var connect_result = dock_panel.connect("analyze_requested", Callable(self, "_on_analyze_requested"))
 		if connect_result != OK:
-			push_error("[ComplexityAnalyzer] Failed to connect analyze_requested signal: %d" % connect_result)
+			logger.log_with_code("error", "ANALYSIS_FAILED", "Failed to connect analyze_requested signal: %d" % connect_result)
 		else:
-			print("[ComplexityAnalyzer] Successfully connected analyze_requested signal")
+			logger.log_message("info", "Successfully connected analyze_requested signal")
 	
 	if has_method("_on_cancel_requested"):
 		dock_panel.connect("cancel_requested", Callable(self, "_on_cancel_requested"))
 	else:
-		push_error("[ComplexityAnalyzer] ERROR: _on_cancel_requested method not found!")
+		logger.log_with_code("error", "ANALYSIS_FAILED", "_on_cancel_requested method not found")
 	
 	if has_method("_on_config_requested"):
 		dock_panel.connect("config_requested", Callable(self, "_on_config_requested"))
 	else:
-		push_error("[ComplexityAnalyzer] ERROR: _on_config_requested method not found!")
+		logger.log_with_code("error", "ANALYSIS_FAILED", "_on_config_requested method not found")
 	
 	if has_method("_on_export_requested"):
 		dock_panel.connect("export_requested", Callable(self, "_on_export_requested"))
 	else:
-		push_error("[ComplexityAnalyzer] ERROR: _on_export_requested method not found!")
+		logger.log_with_code("error", "ANALYSIS_FAILED", "_on_export_requested method not found")
 	
 	# Create timer for deferred processing in Godot 3.x
 	if version_adapter.is_godot_3:
@@ -126,10 +130,11 @@ func _enter_tree():
 		# Note: This will only execute in Godot 3.x, but parser requires 4.x syntax
 		process_timer.connect("timeout", Callable(self, "_process_next_batch_deferred"))
 	
-	print("[ComplexityAnalyzer] Plugin initialized successfully")
+		logger.log_message("info", "Plugin initialized successfully")
 
 func _exit_tree():
-	print("[ComplexityAnalyzer] Plugin exiting tree...")
+	if logger != null:
+		logger.log_message("info", "Plugin exiting tree")
 	
 	if async_analyzer != null and async_analyzer.is_analysis_running():
 		async_analyzer.cancel()
@@ -151,7 +156,9 @@ func _exit_tree():
 	annotation_manager = null
 	version_adapter = null
 	config_manager = null
-	print("[ComplexityAnalyzer] Plugin cleaned up")
+	if logger != null:
+		logger.log_message("info", "Plugin cleaned up")
+	logger = null
 
 func _get_plugin_name() -> String:
 	return "GDScript Complexity Analyzer"

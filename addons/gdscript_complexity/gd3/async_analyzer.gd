@@ -22,6 +22,8 @@ var project_result: BatchAnalyzer.ProjectResult = null
 var config: ConfigManager.Config = null
 var version_adapter: VersionAdapter = null
 var plugin_node: Node = null  # Reference to plugin node for deferred calls
+var logger = null
+var _error_codes = null
 
 func start_analysis(root_path: String, config_data: ConfigManager.Config, adapter: VersionAdapter = null, plugin: Node = null):
 	print("[AsyncAnalyzer] start_analysis called with root_path: %s" % root_path)
@@ -38,6 +40,8 @@ func start_analysis(root_path: String, config_data: ConfigManager.Config, adapte
 	config = config_data
 	version_adapter = adapter
 	plugin_node = plugin  # Store plugin reference for deferred calls
+	_error_codes = load("res://src/error_codes.gd").new()
+	_ensure_logger(config)
 	
 	print("[AsyncAnalyzer] Loading batch_analyzer...")
 	batch_analyzer = preload("res://src/batch_analyzer.gd").new()
@@ -46,6 +50,7 @@ func start_analysis(root_path: String, config_data: ConfigManager.Config, adapte
 		is_running = false
 		return
 	batch_analyzer.version_adapter = version_adapter
+	batch_analyzer.logger = logger
 	
 	print("[AsyncAnalyzer] Loading file discovery...")
 	var discovery_script = "res://src/gd3/file_discovery.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/gd4/file_discovery.gd"
@@ -122,7 +127,7 @@ func _process_next_batch():
 		# Create error result if analysis failed
 		file_result = BatchAnalyzer.FileResult.new()
 		file_result.file_path = file_path
-		file_result.errors.append("Analysis failed: unexpected error")
+		file_result.errors.append(_error_codes.format("ANALYSIS_FAILED", "Analysis failed: unexpected error"))
 		file_result.success = false
 	
 	project_result.file_results.append(file_result)
@@ -161,8 +166,9 @@ func _analyze_file(file_path: String) -> BatchAnalyzer.FileResult:
 	
 	# Check if file exists before processing
 	if not ResourceLoader.exists(file_path):
-		result.errors.append("File does not exist: %s" % file_path)
+		result.errors.append(_error_codes.format("FILE_NOT_FOUND", "File does not exist: %s" % file_path))
 		result.success = false
+		_log_error("FILE_NOT_FOUND", "File does not exist: %s" % file_path)
 		return result
 	
 	# Add error handling to prevent crashes
@@ -174,14 +180,16 @@ func _analyze_file(file_path: String) -> BatchAnalyzer.FileResult:
 	# Wrap tokenizer loading in error handling
 	var tokenizer_resource = load(tokenizer_script)
 	if tokenizer_resource == null:
-		result.errors.append("Failed to load tokenizer script: %s" % tokenizer_script)
+		result.errors.append(_error_codes.format("ANALYSIS_FAILED", "Failed to load tokenizer script: %s" % tokenizer_script))
 		result.success = false
+		_log_error("ANALYSIS_FAILED", "Failed to load tokenizer script: %s" % tokenizer_script)
 		return result
 	
 	tokenizer = tokenizer_resource.new()
 	if tokenizer == null:
-		result.errors.append("Failed to create tokenizer instance")
+		result.errors.append(_error_codes.format("ANALYSIS_FAILED", "Failed to create tokenizer instance"))
 		result.success = false
+		_log_error("ANALYSIS_FAILED", "Failed to create tokenizer instance")
 		return result
 	
 	# Try to tokenize the file
@@ -191,16 +199,21 @@ func _analyze_file(file_path: String) -> BatchAnalyzer.FileResult:
 	if tokenizer_errors.size() > 0:
 		result.errors = tokenizer_errors
 		result.success = false
+		_log_error("TOKEN_PARSE_ERROR", "Tokenization failed for %s" % file_path)
 		return result
 	
 	if tokens.size() == 0:
-		result.errors.append("No tokens found")
+		result.errors.append(_error_codes.format("NO_TOKENS_FOUND", "No tokens found"))
 		result.success = false
+		_log_error("NO_TOKENS_FOUND", "No tokens found in %s" % file_path)
 		return result
 	
 	# Process with detectors
 	var detector = preload("res://src/control_flow_detector.gd").new()
 	var control_flow_nodes = detector.detect_control_flow(tokens, version_adapter)
+	var detector_errors = detector.get_errors()
+	if detector_errors.size() > 0:
+		result.errors += detector_errors
 	
 	var func_detector = preload("res://src/function_detector.gd").new()
 	var functions = func_detector.detect_functions(tokens)
@@ -209,6 +222,9 @@ func _analyze_file(file_path: String) -> BatchAnalyzer.FileResult:
 	var class_detector = preload("res://src/class_detector.gd").new()
 	var classes = class_detector.detect_classes(tokens)
 	result.classes = classes
+	var class_errors = class_detector.get_errors()
+	if class_errors.size() > 0:
+		result.errors += class_errors
 	
 	var cc_calc = preload("res://src/cc_calculator.gd").new()
 	var cc = cc_calc.calculate_cc(control_flow_nodes)
@@ -261,6 +277,7 @@ func _finalize_results():
 		project_result.average_confidence = total_confidence / float(project_result.successful_files)
 	
 	_calculate_worst_offenders()
+	_set_error_summary()
 
 func _calculate_worst_offenders():
 	var cc_sorted = []
@@ -276,6 +293,13 @@ func _calculate_worst_offenders():
 	
 	project_result.worst_cc_files = cc_sorted.slice(0, min(10, cc_sorted.size()))
 	project_result.worst_cog_files = cog_sorted.slice(0, min(10, cog_sorted.size()))
+
+func _set_error_summary():
+	var helper = load("res://src/error_summary.gd").new()
+	var summary = helper.summarize(project_result.file_results, project_result.errors)
+	project_result.error_summary = summary.by_code
+	project_result.error_severity_summary = summary.by_severity
+	project_result.total_errors = summary.total
 
 func _sort_by_cc(arr: Array):
 	var n = arr.size()
@@ -314,3 +338,15 @@ func cancel():
 
 func is_analysis_running() -> bool:
 	return is_running
+
+func _ensure_logger(config_data):
+	if logger != null:
+		return
+	logger = load("res://src/logger.gd").new()
+	if config_data != null and config_data.logging_config != null:
+		logger.configure(config_data.logging_config)
+
+func _log_error(code: String, message: String):
+	if logger == null:
+		return
+	logger.log_with_code("error", code, message)

@@ -11,6 +11,8 @@ var FORBIDDEN_OUTPUT_PATHS = [
 	".github/"
 ]
 
+var _error_codes = null
+
 func generate_report(project_result, config) -> Dictionary:
 	var report = {
 		"version": "1.0",
@@ -27,7 +29,10 @@ func generate_report(project_result, config) -> Dictionary:
 				"cc": project_result.average_cc,
 				"cog": project_result.average_cog,
 				"confidence": project_result.average_confidence
-			}
+			},
+			"error_summary": project_result.error_summary,
+			"error_severity_summary": project_result.error_severity_summary,
+			"total_errors": project_result.total_errors
 		},
 		"worst_offenders": {
 			"cc": _format_worst_offenders(project_result.worst_cc_files, "cc"),
@@ -36,6 +41,12 @@ func generate_report(project_result, config) -> Dictionary:
 		"files": _format_file_results(project_result.file_results),
 		"errors": project_result.errors
 	}
+	if config.telemetry_config.get("enable_anonymous_reporting", false):
+		report["telemetry"] = {
+			"error_summary": project_result.error_summary,
+			"error_severity_summary": project_result.error_severity_summary,
+			"total_errors": project_result.total_errors
+		}
 	return report
 
 func generate_csv(project_result, config) -> String:
@@ -166,9 +177,14 @@ func _check_output_overwrite(output_path: String) -> bool:
 	var normalized = output_path.replace("\\", "/").to_lower()
 	for forbidden in FORBIDDEN_OUTPUT_PATHS:
 		if normalized.find(forbidden.to_lower()) >= 0:
-			print("ERROR: Output path '%s' would overwrite protected path '%s'" % [output_path, forbidden])
+			print(_format_error("OUTPUT_PATH_FORBIDDEN", "Output path '%s' would overwrite protected path '%s'" % [output_path, forbidden]))
 			return false
 	return true
+
+func _format_error(code: String, detail: String) -> String:
+	if _error_codes == null:
+		_error_codes = load("res://src/error_codes.gd").new()
+	return _error_codes.format(code, detail)
 
 func generate_and_write(project_result, config) -> bool:
 	var report = generate_report(project_result, config)

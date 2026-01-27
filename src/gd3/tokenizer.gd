@@ -54,6 +54,7 @@ const DOUBLE_OPS = ["==", "!=", "<=", ">=", "&&", "||", "->", "::", "..", "+=", 
 
 var tokens: Array = []
 var errors: Array = []
+var _error_codes = null
 
 var in_multiline_comment: bool = false
 var in_triple_string: bool = false
@@ -89,12 +90,12 @@ func tokenize_file(file_path: String) -> Array:
 	var file_exists = file_helper.file_exists(file_path)
 	
 	if not file_exists:
-		errors.append("File not found: %s" % file_path)
+		_append_error("FILE_NOT_FOUND", "File not found: %s" % file_path)
 		return []
 	
 	var file = file_helper.open_read(file_path)
 	if file == null:
-		errors.append("Failed to open file: %s" % file_path)
+		_append_error("FILE_OPEN_FAILED", "Failed to open file: %s" % file_path)
 		return []
 	
 	var line_number = 1
@@ -106,15 +107,15 @@ func tokenize_file(file_path: String) -> Array:
 	file_helper.close_file(file)
 	
 	if in_multiline_comment:
-		errors.append("Unterminated multi-line comment starting at line %d" % multiline_start_line)
+		_append_error("TOKEN_UNTERMINATED_COMMENT", "Unterminated multi-line comment starting at line %d" % multiline_start_line)
 	if in_triple_string:
-		errors.append("Unterminated triple-quoted string starting at line %d" % multiline_start_line)
+		_append_error("TOKEN_UNTERMINATED_STRING", "Unterminated triple-quoted string starting at line %d" % multiline_start_line)
 	if paren_depth != 0:
-		errors.append("Unbalanced parentheses in file")
+		_append_error("TOKEN_UNBALANCED_PAREN", "Unbalanced parentheses in file")
 	if bracket_depth != 0:
-		errors.append("Unbalanced brackets in file")
+		_append_error("TOKEN_UNBALANCED_BRACKET", "Unbalanced brackets in file")
 	if brace_depth != 0:
-		errors.append("Unbalanced braces in file")
+		_append_error("TOKEN_UNBALANCED_BRACE", "Unbalanced braces in file")
 	
 	return tokens.duplicate()
 
@@ -153,7 +154,7 @@ func tokenize_line(line: String, line_number: int):
 			if three_chars == '"""' or three_chars == "'''":
 				var result = _parse_triple_string(line, i, line_number, column, three_chars)
 				if result.error:
-					errors.append("Line %d:%d: %s" % [line_number, column, result.error])
+					_append_error("TOKEN_PARSE_ERROR", "Line %d:%d: %s" % [line_number, column, result.error])
 					i += 1
 					column += 1
 				elif result.multiline:
@@ -189,7 +190,7 @@ func tokenize_line(line: String, line_number: int):
 		if current_char == '"' or current_char == "'":
 			var string_result = _parse_string(line, i, line_number, column, current_char)
 			if string_result.error:
-				errors.append("Line %d:%d: %s" % [line_number, column, string_result.error])
+				_append_error("TOKEN_PARSE_ERROR", "Line %d:%d: %s" % [line_number, column, string_result.error])
 				i += 1
 				column += 1
 			else:
@@ -235,7 +236,7 @@ func tokenize_line(line: String, line_number: int):
 				column = annotation_result.next_column
 				continue
 
-		errors.append("Line %d:%d: Unknown character '%s'" % [line_number, column, current_char])
+		_append_error("TOKEN_UNKNOWN_CHAR", "Line %d:%d: Unknown character '%s'" % [line_number, column, current_char])
 		i += 1
 		column += 1
 
@@ -458,19 +459,27 @@ func _track_brackets(op: String, line_num: int, col: int):
 	elif op == ")":
 		paren_depth -= 1
 		if paren_depth < 0:
-			errors.append("Line %d:%d: Unbalanced ')'" % [line_num, col])
+			_append_error("TOKEN_UNBALANCED_PAREN", "Line %d:%d: Unbalanced ')'" % [line_num, col])
 			paren_depth = 0
 	elif op == "[":
 		bracket_depth += 1
 	elif op == "]":
 		bracket_depth -= 1
 		if bracket_depth < 0:
-			errors.append("Line %d:%d: Unbalanced ']'" % [line_num, col])
+			_append_error("TOKEN_UNBALANCED_BRACKET", "Line %d:%d: Unbalanced ']'" % [line_num, col])
 			bracket_depth = 0
 	elif op == "{":
 		brace_depth += 1
 	elif op == "}":
 		brace_depth -= 1
 		if brace_depth < 0:
-			errors.append("Line %d:%d: Unbalanced '}'" % [line_num, col])
+			_append_error("TOKEN_UNBALANCED_BRACE", "Line %d:%d: Unbalanced '}'" % [line_num, col])
 			brace_depth = 0
+
+func _ensure_error_codes():
+	if _error_codes == null:
+		_error_codes = load("res://src/error_codes.gd").new()
+
+func _append_error(code: String, detail: String):
+	_ensure_error_codes()
+	errors.append(_error_codes.format(code, detail))

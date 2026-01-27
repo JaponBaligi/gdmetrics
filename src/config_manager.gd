@@ -13,6 +13,7 @@ class Config:
 	var report_config: Dictionary = {}
 	var performance_config: Dictionary = {}
 	var telemetry_config: Dictionary = {}
+	var logging_config: Dictionary = {}
 	
 	func _init():
 		include_patterns = ["res://**/*.gd"]
@@ -55,15 +56,23 @@ class Config:
 		telemetry_config = {
 			"enable_anonymous_reporting": false
 		}
+		logging_config = {
+			"enable_console": true,
+			"enable_file": false,
+			"file_path": "res://complexity_analyzer.log",
+			"level": "info"
+		}
 
 var config: Config
 var config_path: String = ""
 var errors: Array = []
 var _file_helper = null
 var _is_godot_3: bool = false
+var _error_codes = null
 
 func _init(config_file_path: String = ""):
 	config = Config.new()
+	_error_codes = load("res://src/error_codes.gd").new()
 	var version_info = Engine.get_version_info()
 	_is_godot_3 = version_info.get("major", 0) == 3
 	# Load file helper dynamically - lazy load to avoid parse-time cascade
@@ -103,16 +112,16 @@ func load_config(config_file_path: String) -> bool:
 	
 	# Use file helper for both 3.x and 4.x to avoid parse-time API issues
 	if _file_helper == null:
-		errors.append("File helper not available (using defaults)")
+		errors.append(_format_error("CONFIG_HELPER_MISSING", "File helper not available (using defaults)"))
 		return false
 	
 	if not _file_helper.file_exists(config_file_path):
-		errors.append("Config file not found: %s (using defaults)" % config_file_path)
+		errors.append(_format_error("CONFIG_FILE_NOT_FOUND", "Config file not found: %s (using defaults)" % config_file_path))
 		return false
 	
 	var f = _file_helper.open_read(config_file_path)
 	if f == null:
-		errors.append("Failed to open config file: %s (using defaults)" % config_file_path)
+		errors.append(_format_error("CONFIG_OPEN_FAILED", "Failed to open config file: %s (using defaults)" % config_file_path))
 		return false
 	
 	json_text = f.get_as_text()
@@ -122,13 +131,13 @@ func load_config(config_file_path: String) -> bool:
 	var json = JSON.new()
 	var parse_result = json.parse(json_text)
 	if parse_result != OK:
-		errors.append("Invalid JSON in config file: %s (using defaults)" % json.get_error_message())
+		errors.append(_format_error("CONFIG_INVALID_JSON", "Invalid JSON in config file: %s (using defaults)" % json.get_error_message()))
 		return false
 	
 	var data = json.get_data()
 	
 	if not data is Dictionary:
-		errors.append("Config file must contain a JSON object (using defaults)")
+		errors.append(_format_error("CONFIG_INVALID_ROOT", "Config file must contain a JSON object (using defaults)"))
 		return false
 	
 	_parse_config(data)
@@ -139,49 +148,55 @@ func _parse_config(data: Dictionary):
 		if data["include"] is Array:
 			config.include_patterns = data["include"]
 		else:
-			errors.append("Config 'include' must be an array")
+			errors.append(_format_error("CONFIG_INVALID_TYPE", "Config 'include' must be an array"))
 	
 	if data.has("exclude"):
 		if data["exclude"] is Array:
 			config.exclude_patterns = data["exclude"]
 		else:
-			errors.append("Config 'exclude' must be an array")
+			errors.append(_format_error("CONFIG_INVALID_TYPE", "Config 'exclude' must be an array"))
 	
 	if data.has("cc"):
 		if data["cc"] is Dictionary:
 			_parse_cc_config(data["cc"])
 		else:
-			errors.append("Config 'cc' must be an object")
+			errors.append(_format_error("CONFIG_INVALID_TYPE", "Config 'cc' must be an object"))
 	
 	if data.has("cog"):
 		if data["cog"] is Dictionary:
 			_parse_cog_config(data["cog"])
 		else:
-			errors.append("Config 'cog' must be an object")
+			errors.append(_format_error("CONFIG_INVALID_TYPE", "Config 'cog' must be an object"))
 	
 	if data.has("parser"):
 		if data["parser"] is Dictionary:
 			_parse_parser_config(data["parser"])
 		else:
-			errors.append("Config 'parser' must be an object")
+			errors.append(_format_error("CONFIG_INVALID_TYPE", "Config 'parser' must be an object"))
 	
 	if data.has("report"):
 		if data["report"] is Dictionary:
 			_parse_report_config(data["report"])
 		else:
-			errors.append("Config 'report' must be an object")
+			errors.append(_format_error("CONFIG_INVALID_TYPE", "Config 'report' must be an object"))
 	
 	if data.has("performance"):
 		if data["performance"] is Dictionary:
 			_parse_performance_config(data["performance"])
 		else:
-			errors.append("Config 'performance' must be an object")
+			errors.append(_format_error("CONFIG_INVALID_TYPE", "Config 'performance' must be an object"))
 	
 	if data.has("telemetry"):
 		if data["telemetry"] is Dictionary:
 			_parse_telemetry_config(data["telemetry"])
 		else:
-			errors.append("Config 'telemetry' must be an object")
+			errors.append(_format_error("CONFIG_INVALID_TYPE", "Config 'telemetry' must be an object"))
+	
+	if data.has("logging"):
+		if data["logging"] is Dictionary:
+			_parse_logging_config(data["logging"])
+		else:
+			errors.append(_format_error("CONFIG_INVALID_TYPE", "Config 'logging' must be an object"))
 
 func _parse_cc_config(cc_data: Dictionary):
 	if cc_data.has("count_logical_operators"):
@@ -224,7 +239,7 @@ func _parse_parser_config(parser_data: Dictionary):
 			if mode == "fast" or mode == "balanced" or mode == "thorough":
 				config.parser_config["parser_mode"] = mode
 			else:
-				errors.append("Invalid parser_mode '%s', using 'balanced'" % mode)
+				errors.append(_format_error("CONFIG_INVALID_VALUE", "Invalid parser_mode '%s', using 'balanced'" % mode))
 	
 	if parser_data.has("max_expected_errors_per_100_lines"):
 		if parser_data["max_expected_errors_per_100_lines"] is int and parser_data["max_expected_errors_per_100_lines"] >= 0:
@@ -238,7 +253,7 @@ func _parse_parser_config(parser_data: Dictionary):
 			if mode == "fast" or mode == "balanced" or mode == "thorough":
 				config.parser_config["force_mode"] = mode
 			else:
-				errors.append("Invalid force_mode '%s', using null" % mode)
+				errors.append(_format_error("CONFIG_INVALID_VALUE", "Invalid force_mode '%s', using null" % mode))
 	
 	if parser_data.has("confidence_weights"):
 		if parser_data["confidence_weights"] is Dictionary:
@@ -283,6 +298,23 @@ func _parse_telemetry_config(telemetry_data: Dictionary):
 		if telemetry_data["enable_anonymous_reporting"] is bool:
 			config.telemetry_config["enable_anonymous_reporting"] = telemetry_data["enable_anonymous_reporting"]
 
+func _parse_logging_config(logging_data: Dictionary):
+	if logging_data.has("enable_console"):
+		if logging_data["enable_console"] is bool:
+			config.logging_config["enable_console"] = logging_data["enable_console"]
+	
+	if logging_data.has("enable_file"):
+		if logging_data["enable_file"] is bool:
+			config.logging_config["enable_file"] = logging_data["enable_file"]
+	
+	if logging_data.has("file_path"):
+		if logging_data["file_path"] is String:
+			config.logging_config["file_path"] = logging_data["file_path"]
+	
+	if logging_data.has("level"):
+		if logging_data["level"] is String:
+			config.logging_config["level"] = logging_data["level"].to_lower()
+
 func get_include_patterns() -> Array:
 	return config.include_patterns.duplicate()
 
@@ -315,4 +347,9 @@ func get_errors() -> Array:
 
 func has_errors() -> bool:
 	return errors.size() > 0
+
+func _format_error(code: String, detail: String) -> String:
+	if _error_codes == null:
+		return "[%s] %s" % [code, detail]
+	return _error_codes.format(code, detail)
 

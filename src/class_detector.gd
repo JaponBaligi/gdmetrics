@@ -29,6 +29,7 @@ class ClassInfo:
 
 var classes: Array = []
 var errors: Array = []
+var _error_codes = null
 
 func detect_classes(tokens: Array) -> Array:
 	classes.clear()
@@ -68,7 +69,7 @@ func detect_classes(tokens: Array) -> Array:
 					if current_class != null:
 						current_class.class_name_decl = class_name_result["class_name"]
 					else:
-						errors.append("class_name declaration without class definition at line %d" % token.line)
+						_append_error("CLASS_DECLARATION_MISSING", "class_name declaration without class definition at line %d" % token.line)
 					i = class_name_result["next_index"]
 					continue
 			elif token.value == "extends":
@@ -77,7 +78,7 @@ func detect_classes(tokens: Array) -> Array:
 					if current_class != null:
 						current_class.extends_class = extends_result["extends_class"]
 					else:
-						errors.append("extends declaration without class definition at line %d" % token.line)
+						_append_error("EXTENDS_WITHOUT_CLASS", "extends declaration without class definition at line %d" % token.line)
 					i = extends_result["next_index"]
 					continue
 			elif token.value == "class":
@@ -101,6 +102,14 @@ func detect_classes(tokens: Array) -> Array:
 			current_class.end_line = current_class.start_line
 	
 	return classes.duplicate()
+
+func _ensure_error_codes():
+	if _error_codes == null:
+		_error_codes = load("res://src/error_codes.gd").new()
+
+func _append_error(code: String, detail: String):
+	_ensure_error_codes()
+	errors.append(_error_codes.format(code, detail))
 
 func _get_line_indent(tokens: Array, token_index: int) -> int:
 	if token_index <= 0:

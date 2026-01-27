@@ -31,14 +31,21 @@ class ProjectResult:
 	var worst_cog_files: Array = []
 	var file_results: Array = []
 	var errors: Array = []
+	var error_summary: Dictionary = {}
+	var error_severity_summary: Dictionary = {}
+	var total_errors: int = 0
 
 var project_result = null  # ProjectResult - nested class
 var version_adapter = null
 var cache_manager = null
+var logger = null
+var _error_codes = null
 
 func analyze_project(root_path: String, config, adapter = null):  # -> ProjectResult - nested class
 	project_result = ProjectResult.new()
 	version_adapter = adapter
+	_error_codes = load("res://src/error_codes.gd").new()
+	_ensure_logger(config)
 	
 	# Initialize cache manager if caching is enabled
 	if config.performance_config.get("enable_caching", false):
@@ -54,7 +61,8 @@ func analyze_project(root_path: String, config, adapter = null):  # -> ProjectRe
 	project_result.total_files = files.size()
 	
 	if files.size() == 0:
-		project_result.errors.append("No files found matching include patterns")
+		project_result.errors.append(_error_codes.format("NO_FILES_FOUND", "No files found matching include patterns"))
+		_log_error("NO_FILES_FOUND", "No files found matching include patterns")
 		return project_result
 	
 	# Cleanup orphaned cache entries if caching is enabled
@@ -89,6 +97,7 @@ func analyze_project(root_path: String, config, adapter = null):  # -> ProjectRe
 		project_result.average_confidence = float(total_confidence) / float(successful_count)
 	
 	project_result.file_results = file_results
+	_set_error_summary(file_results)
 	
 	_calculate_worst_offenders(file_results)
 	
@@ -119,14 +128,16 @@ func _analyze_file(file_path: String, config):  # -> FileResult - nested class
 	if tokenizer_errors.size() > 0:
 		result.errors = tokenizer_errors
 		result.success = false
+		_log_error("TOKEN_PARSE_ERROR", "Tokenization failed for %s" % file_path)
 		# Store failed result in cache (so we don't retry failed files)
 		if cache_manager != null:
 			cache_manager.store_result(file_path, config, result)
 		return result
 	
 	if tokens.size() == 0:
-		result.errors.append("No tokens found")
+		result.errors.append(_error_codes.format("NO_TOKENS_FOUND", "No tokens found"))
 		result.success = false
+		_log_error("NO_TOKENS_FOUND", "No tokens found in %s" % file_path)
 		# Store failed result in cache
 		if cache_manager != null:
 			cache_manager.store_result(file_path, config, result)
@@ -134,6 +145,9 @@ func _analyze_file(file_path: String, config):  # -> FileResult - nested class
 	
 	var detector = load("res://src/control_flow_detector.gd").new()
 	var control_flow_nodes = detector.detect_control_flow(tokens, version_adapter)
+	var detector_errors = detector.get_errors()
+	if detector_errors.size() > 0:
+		result.errors += detector_errors
 	
 	var func_detector = load("res://src/function_detector.gd").new()
 	var functions = func_detector.detect_functions(tokens)
@@ -142,6 +156,9 @@ func _analyze_file(file_path: String, config):  # -> FileResult - nested class
 	var class_detector = load("res://src/class_detector.gd").new()
 	var classes = class_detector.detect_classes(tokens)
 	result.classes = classes
+	var class_errors = class_detector.get_errors()
+	if class_errors.size() > 0:
+		result.errors += class_errors
 	
 	var cc_calc = load("res://src/cc_calculator.gd").new()
 	var cc = cc_calc.calculate_cc(control_flow_nodes)
@@ -253,6 +270,25 @@ func _sort_by_cog(arr: Array):
 
 func get_project_result():  # -> ProjectResult - nested class
 	return project_result
+
+func _ensure_logger(config):
+	if logger != null:
+		return
+	logger = load("res://src/logger.gd").new()
+	if config != null and config.logging_config != null:
+		logger.configure(config.logging_config)
+
+func _log_error(code: String, message: String):
+	if logger == null:
+		return
+	logger.log_with_code("error", code, message)
+
+func _set_error_summary(file_results: Array):
+	var helper = load("res://src/error_summary.gd").new()
+	var summary = helper.summarize(file_results, project_result.errors)
+	project_result.error_summary = summary.by_code
+	project_result.error_severity_summary = summary.by_severity
+	project_result.total_errors = summary.total
 
 # Helper methods to create nested class instances when class_name is commented out
 static func create_file_result():  # -> FileResult - nested class
