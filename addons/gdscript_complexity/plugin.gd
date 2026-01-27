@@ -119,6 +119,11 @@ func _enter_tree():
 		dock_panel.connect("export_requested", Callable(self, "_on_export_requested"))
 	else:
 		logger.log_with_code("error", "ANALYSIS_FAILED", "_on_export_requested method not found")
+
+	if has_method("_on_open_requested"):
+		dock_panel.connect("open_requested", Callable(self, "_on_open_requested"))
+	else:
+		logger.log_with_code("error", "ANALYSIS_FAILED", "_on_open_requested method not found")
 	
 	# Create timer for deferred processing in Godot 3.x
 	if version_adapter.is_godot_3:
@@ -325,7 +330,7 @@ func _add_file_result(file_result):
 		for func_info in file_result.functions:
 			if file_result.per_function_cog.has(func_info.name):
 				var cog = file_result.per_function_cog[func_info.name]
-				dock_panel.add_function_result(file_item, func_info.name, 0, cog)
+				dock_panel.add_function_result(file_item, func_info.name, 0, cog, file_result.file_path, func_info.start_line)
 	
 	if annotation_manager != null and config_manager != null:
 		var config = config_manager.get_config()
@@ -415,6 +420,29 @@ func _on_export_requested(format: String):
 			dock_panel.set_status("Exported %s to %s" % [format.to_upper(), output_path])
 		else:
 			dock_panel.set_status("Failed to export %s" % format.to_upper())
+
+func _on_open_requested(script_path: String, line: int):
+	_open_script_at_line(script_path, line)
+
+func _open_script_at_line(script_path: String, line: int):
+	if script_path == "":
+		return
+	var script_res = load(script_path)
+	if script_res == null:
+		return
+	var editor_interface = get_editor_interface()
+	if editor_interface == null:
+		return
+	if editor_interface.has_method("edit_script"):
+		editor_interface.call("edit_script", script_res, line)
+		return
+	if editor_interface.has_method("edit_resource"):
+		editor_interface.call("edit_resource", script_res)
+		var script_editor = editor_interface.get_script_editor()
+		if script_editor != null and script_editor.has_method("goto_line"):
+			script_editor.call("goto_line", line)
+		elif script_editor != null and script_editor.has_method("set_line"):
+			script_editor.call("set_line", line)
 
 func _auto_export_reports(project_result):
 	if project_result == null or config_manager == null:

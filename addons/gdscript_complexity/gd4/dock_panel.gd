@@ -8,6 +8,7 @@ signal analyze_requested
 signal export_requested(format: String)
 signal config_requested
 signal cancel_requested
+signal open_requested(script_path: String, line: int)
 
 var analyze_button: Button = null
 var cancel_button: Button = null
@@ -15,6 +16,7 @@ var progress_bar: ProgressBar = null
 var results_tree: Tree = null
 var config_button: Button = null
 var export_button: MenuButton = null
+var open_button: Button = null
 var status_label: Label = null
 
 var tree_root: TreeItem = null
@@ -29,6 +31,8 @@ func _setup_ui():
 	var vbox = VBoxContainer.new()
 	add_child(vbox)
 	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	
 	# Top buttons row
 	var button_row = HBoxContainer.new()
@@ -61,6 +65,12 @@ func _setup_ui():
 	popup.id_pressed.connect(_on_export_menu_selected)
 	button_row.add_child(export_button)
 
+	open_button = Button.new()
+	open_button.text = "Open"
+	open_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	open_button.pressed.connect(_on_open_pressed)
+	button_row.add_child(open_button)
+
 	progress_bar = ProgressBar.new()
 	progress_bar.max_value = 100.0
 	progress_bar.value = 0.0
@@ -74,7 +84,10 @@ func _setup_ui():
 
 	results_tree = Tree.new()
 	results_tree.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	results_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	results_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	results_tree.columns = 4
+	results_tree.set_column_titles_visible(true)
 	results_tree.set_column_title(0, "File/Function")
 	results_tree.set_column_title(1, "CC")
 	results_tree.set_column_title(2, "C-COG")
@@ -83,9 +96,11 @@ func _setup_ui():
 	results_tree.set_column_expand(1, false)
 	results_tree.set_column_expand(2, false)
 	results_tree.set_column_expand(3, false)
+	results_tree.set_column_custom_minimum_width(0, 220)
 	results_tree.set_column_custom_minimum_width(1, 60)
 	results_tree.set_column_custom_minimum_width(2, 60)
 	results_tree.set_column_custom_minimum_width(3, 80)
+	results_tree.item_activated.connect(_on_item_activated)
 	vbox.add_child(results_tree)
 	
 	_apply_editor_theme()
@@ -142,6 +157,16 @@ func _on_export_menu_selected(id: int):
 	var format = "json" if id == 0 else "csv"
 	export_requested.emit(format)
 
+func _on_open_pressed():
+	var target = _get_selected_target()
+	if target != null:
+		open_requested.emit(target["script_path"], target["line"])
+
+func _on_item_activated():
+	var target = _get_selected_target()
+	if target != null:
+		open_requested.emit(target["script_path"], target["line"])
+
 func set_status(text: String):
 	if status_label != null:
 		status_label.text = text
@@ -175,11 +200,13 @@ func add_file_result(file_path: String, cc: int, cog: int, confidence: float):
 	file_item.set_text(1, str(cc))
 	file_item.set_text(2, str(cog))
 	file_item.set_text(3, "%.2f" % confidence)
+	file_item.set_metadata(0, {"script_path": file_path, "line": 1})
+	_align_numeric_columns(file_item)
 	file_item.set_selectable(0, true)
 	
 	return file_item
 
-func add_function_result(parent_item: TreeItem, func_name: String, cc: int, cog: int):
+func add_function_result(parent_item: TreeItem, func_name: String, cc: int, cog: int, script_path: String, line: int):
 	if results_tree == null or parent_item == null:
 		return null
 	
@@ -188,9 +215,30 @@ func add_function_result(parent_item: TreeItem, func_name: String, cc: int, cog:
 	func_item.set_text(1, str(cc))
 	func_item.set_text(2, str(cog))
 	func_item.set_text(3, "-")
+	func_item.set_metadata(0, {"script_path": script_path, "line": max(line, 1)})
+	_align_numeric_columns(func_item)
 	func_item.set_selectable(0, true)
 	
 	return func_item
+
+func _get_selected_target():
+	if results_tree == null:
+		return null
+	var item = results_tree.get_selected()
+	if item == null:
+		return null
+	var data = item.get_metadata(0)
+	if typeof(data) == TYPE_DICTIONARY and data.has("script_path"):
+		return data
+	return null
+
+func _align_numeric_columns(item: TreeItem):
+	if item == null:
+		return
+	if item.has_method("set_text_alignment"):
+		item.call("set_text_alignment", 1, HORIZONTAL_ALIGNMENT_RIGHT)
+		item.call("set_text_alignment", 2, HORIZONTAL_ALIGNMENT_RIGHT)
+		item.call("set_text_alignment", 3, HORIZONTAL_ALIGNMENT_RIGHT)
 
 func set_analyze_button_enabled(enabled: bool):
 	if analyze_button != null:
