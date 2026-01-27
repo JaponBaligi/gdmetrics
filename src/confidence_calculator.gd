@@ -20,15 +20,16 @@ class ConfidenceResult:
 		}
 
 var default_weights: Dictionary = {
-	"token_coverage": 0.4,
-	"indentation_consistency": 0.2,
-	"block_balance": 0.2,
-	"parse_errors": 0.2
+	# Tuned via tests/validate_confidence.gd (r^2 > 0.7)
+	"token_coverage": 0.0,
+	"indentation_consistency": 0.0,
+	"block_balance": 1.0,
+	"parse_errors": 0.0
 }
 
 var result: ConfidenceResult
 
-func calculate_confidence(tokens: Array, errors: Array, version_adapter = null) -> ConfidenceResult:
+func calculate_confidence(tokens: Array, errors: Array, version_adapter = null, weights: Dictionary = {}) -> ConfidenceResult:
 	result = ConfidenceResult.new()
 	
 	if tokens.size() == 0:
@@ -47,11 +48,12 @@ func calculate_confidence(tokens: Array, errors: Array, version_adapter = null) 
 	result.components["block_balance"] = block_balance
 	result.components["parse_errors"] = parse_error_score
 	
+	var effective_weights = _normalize_weights(weights)
 	result.score = (
-		token_coverage * default_weights["token_coverage"] +
-		indentation_consistency * default_weights["indentation_consistency"] +
-		block_balance * default_weights["block_balance"] +
-		parse_error_score * default_weights["parse_errors"]
+		token_coverage * effective_weights["token_coverage"] +
+		indentation_consistency * effective_weights["indentation_consistency"] +
+		block_balance * effective_weights["block_balance"] +
+		parse_error_score * effective_weights["parse_errors"]
 	)
 	
 	result.score = clamp(result.score, 0.0, 1.0)
@@ -64,6 +66,27 @@ func calculate_confidence(tokens: Array, errors: Array, version_adapter = null) 
 			result.score = cap
 	
 	return result
+
+func _normalize_weights(weights: Dictionary) -> Dictionary:
+	var merged = default_weights.duplicate()
+	if weights != null:
+		for key in weights.keys():
+			if merged.has(key) and weights[key] is float:
+				merged[key] = float(weights[key])
+			elif merged.has(key) and weights[key] is int:
+				merged[key] = float(weights[key])
+	
+	var total = 0.0
+	for key in merged.keys():
+		total += merged[key]
+	
+	if total <= 0.0:
+		return default_weights.duplicate()
+	
+	for key in merged.keys():
+		merged[key] = merged[key] / total
+	
+	return merged
 
 func _calculate_token_coverage(tokens: Array) -> float:
 	if tokens.size() == 0:

@@ -202,10 +202,14 @@ godot --headless --script tests/test_confidence_calculator.gd
 godot --headless --script tests/verify_cc_cog.gd
 
 # CSV export
-godot --headless --script cli/test_csv_export.gd
+godot --headless --script tests/test_csv_export.gd
 
 # Advanced C-COG rules
-godot --headless --script cli/test_cog_advanced.gd
+godot --headless --script tests/test_cog_advanced.gd
+
+# Confidence validation/tuning (optional)
+godot --headless --script tests/validate_confidence.gd -- --step 0.1
+godot --headless --script tests/validate_confidence.gd -- --step 0.1 --apply
 ```
 
 ## Known Limitations
@@ -214,6 +218,10 @@ godot --headless --script cli/test_cog_advanced.gd
 - **Confidence Cap**: Godot 3.x confidence scores capped at 0.90 maximum
 - **Match Statements**: Not supported in Godot 3.x (language limitation)
 - **Expression Parsing**: Shallow parsing (by design, sufficient for complexity metrics)
+
+## Confidence Scores
+
+Confidence scores estimate parse reliability. Use `tests/validate_confidence.gd` to compute r² against fixtures and optionally write tuned weights to `complexity_config.json`. Default weights are tuned via this tool.
 
 ## License
 

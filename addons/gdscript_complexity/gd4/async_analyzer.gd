@@ -130,7 +130,10 @@ func _analyze_file(file_path: String):  # -> BatchAnalyzer.FileResult - loaded d
 	result.per_function_cog = cog_result.per_function
 	
 	var confidence_calc = preload("res://src/confidence_calculator.gd").new()
-	var confidence_result = confidence_calc.calculate_confidence(tokens, tokenizer_errors, version_adapter)
+	var confidence_weights = {}
+	if config != null and config.parser_config.has("confidence_weights"):
+		confidence_weights = config.parser_config["confidence_weights"]
+	var confidence_result = confidence_calc.calculate_confidence(tokens, tokenizer_errors, version_adapter, confidence_weights)
 	result.confidence = confidence_result.score
 	
 	result.success = true

@@ -18,7 +18,13 @@
 		"threshold_fail": 30
 	},
 	"parser": {
-		"parser_mode": "balanced"
+		"parser_mode": "balanced",
+		"confidence_weights": {
+			"token_coverage": 0.0,
+			"indentation_consistency": 0.0,
+			"block_balance": 1.0,
+			"parse_errors": 0.0
+		}
 	},
 	"report": {
 		"formats": ["json", "csv"],
