@@ -22,6 +22,14 @@ var config = null  # ConfigManager.Config - loaded dynamically
 var version_adapter = null  # VersionAdapter - loaded dynamically
 var logger = null
 var _error_codes = null
+var _tools_ready: bool = false
+var _tokenizer_class = null
+var _detector_instance = null
+var _function_detector_instance = null
+var _class_detector_instance = null
+var _cc_calc_instance = null
+var _cog_calc_instance = null
+var _confidence_calc_instance = null
 
 func start_analysis(root_path: String, config_data, adapter = null):  # ConfigManager.Config, VersionAdapter - loaded dynamically
 	if is_running:
@@ -95,9 +103,9 @@ func _analyze_file(file_path: String):  # -> BatchAnalyzer.FileResult - loaded d
 	var batch_script = load("res://src/batch_analyzer.gd")
 	var result = batch_script.create_file_result()
 	result.file_path = file_path
+	_ensure_tools()
 	
-	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
-	var tokenizer = load(tokenizer_script).new()
+	var tokenizer = _tokenizer_class.new()
 	var tokens = tokenizer.tokenize_file(file_path)
 	var tokenizer_errors = tokenizer.get_errors()
 	
@@ -113,40 +121,34 @@ func _analyze_file(file_path: String):  # -> BatchAnalyzer.FileResult - loaded d
 		_log_error("NO_TOKENS_FOUND", "No tokens found in %s" % file_path)
 		return result
 	
-	var detector = preload("res://src/control_flow_detector.gd").new()
-	var control_flow_nodes = detector.detect_control_flow(tokens, version_adapter)
-	var detector_errors = detector.get_errors()
+	var control_flow_nodes = _detector_instance.detect_control_flow(tokens, version_adapter)
+	var detector_errors = _detector_instance.get_errors()
 	if detector_errors.size() > 0:
 		result.errors += detector_errors
 	
-	var func_detector = preload("res://src/function_detector.gd").new()
-	var functions = func_detector.detect_functions(tokens)
+	var functions = _function_detector_instance.detect_functions(tokens)
 	result.functions = functions
 	
-	var class_detector = preload("res://src/class_detector.gd").new()
-	var classes = class_detector.detect_classes(tokens)
+	var classes = _class_detector_instance.detect_classes(tokens)
 	result.classes = classes
-	var class_errors = class_detector.get_errors()
+	var class_errors = _class_detector_instance.get_errors()
 	if class_errors.size() > 0:
 		result.errors += class_errors
 	
-	var cc_calc = preload("res://src/cc_calculator.gd").new()
-	var cc = cc_calc.calculate_cc(control_flow_nodes)
+	var cc = _cc_calc_instance.calculate_cc(control_flow_nodes)
 	result.cc = cc
-	result.cc_breakdown = cc_calc.get_breakdown()
+	result.cc_breakdown = _cc_calc_instance.get_breakdown()
 	result.per_function_cc = _calculate_per_function_cc(control_flow_nodes, functions)
 	
-	var cog_calc = preload("res://src/cog_complexity_calculator.gd").new()
-	var cog_result = cog_calc.calculate_cog(control_flow_nodes, functions)
+	var cog_result = _cog_calc_instance.calculate_cog(control_flow_nodes, functions)
 	result.cog = cog_result.total_cog
 	result.cog_breakdown = cog_result.breakdown
 	result.per_function_cog = cog_result.per_function
 	
-	var confidence_calc = preload("res://src/confidence_calculator.gd").new()
 	var confidence_weights = {}
 	if config != null and config.parser_config.has("confidence_weights"):
 		confidence_weights = config.parser_config["confidence_weights"]
-	var confidence_result = confidence_calc.calculate_confidence(tokens, tokenizer_errors, version_adapter, confidence_weights)
+	var confidence_result = _confidence_calc_instance.calculate_confidence(tokens, tokenizer_errors, version_adapter, confidence_weights)
 	result.confidence = confidence_result.score
 	
 	result.success = true
@@ -163,8 +165,7 @@ func _calculate_per_function_cc(control_flow_nodes: Array, functions: Array) -> 
 			if node.line >= func_info.start_line and node.line <= func_info.end_line:
 				func_nodes.append(node)
 		
-		var cc_calc = preload("res://src/cc_calculator.gd").new()
-		var func_cc = cc_calc.calculate_cc(func_nodes)
+		var func_cc = _cc_calc_instance.calculate_cc(func_nodes)
 		per_function[func_info.name] = func_cc
 	
 	return per_function
@@ -228,3 +229,16 @@ func _log_error(code: String, message: String):
 	if logger == null:
 		return
 	logger.log_with_code("error", code, message)
+
+func _ensure_tools():
+	if _tools_ready:
+		return
+	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+	_tokenizer_class = load(tokenizer_script)
+	_detector_instance = load("res://src/control_flow_detector.gd").new()
+	_function_detector_instance = load("res://src/function_detector.gd").new()
+	_class_detector_instance = load("res://src/class_detector.gd").new()
+	_cc_calc_instance = load("res://src/cc_calculator.gd").new()
+	_cog_calc_instance = load("res://src/cog_complexity_calculator.gd").new()
+	_confidence_calc_instance = load("res://src/confidence_calculator.gd").new()
+	_tools_ready = true
