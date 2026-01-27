@@ -60,6 +60,9 @@ var in_triple_string: bool = false
 var triple_string_quote: String = ""
 var multiline_buffer: String = ""
 var multiline_start_line: int = 1
+var paren_depth: int = 0
+var bracket_depth: int = 0
+var brace_depth: int = 0
 
 func tokenize_file(file_path: String) -> Array:
 
@@ -70,6 +73,9 @@ func tokenize_file(file_path: String) -> Array:
 	triple_string_quote = ""
 	multiline_buffer = ""
 	multiline_start_line = 1
+	paren_depth = 0
+	bracket_depth = 0
+	brace_depth = 0
 	
 	var version_info = Engine.get_version_info()
 	var is_godot_3 = version_info.get("major", 0) == 3
@@ -103,6 +109,12 @@ func tokenize_file(file_path: String) -> Array:
 		errors.append("Unterminated multi-line comment starting at line %d" % multiline_start_line)
 	if in_triple_string:
 		errors.append("Unterminated triple-quoted string starting at line %d" % multiline_start_line)
+	if paren_depth != 0:
+		errors.append("Unbalanced parentheses in file")
+	if bracket_depth != 0:
+		errors.append("Unbalanced brackets in file")
+	if brace_depth != 0:
+		errors.append("Unbalanced braces in file")
 	
 	return tokens.duplicate()
 
@@ -203,6 +215,7 @@ func tokenize_line(line: String, line_number: int):
 		
 		if current_char in SINGLE_OPS:
 			tokens.append(Token.new(TokenType.OPERATOR, current_char, line_number, column))
+			_track_brackets(current_char, line_number, column)
 			i += 1
 			column += 1
 			continue
@@ -438,3 +451,26 @@ func _continue_triple_string(line: String, line_num: int) -> Dictionary:
 	
 	multiline_buffer += "\n"
 	return {"complete": false}
+
+func _track_brackets(op: String, line_num: int, col: int):
+	if op == "(":
+		paren_depth += 1
+	elif op == ")":
+		paren_depth -= 1
+		if paren_depth < 0:
+			errors.append("Line %d:%d: Unbalanced ')'" % [line_num, col])
+			paren_depth = 0
+	elif op == "[":
+		bracket_depth += 1
+	elif op == "]":
+		bracket_depth -= 1
+		if bracket_depth < 0:
+			errors.append("Line %d:%d: Unbalanced ']'" % [line_num, col])
+			bracket_depth = 0
+	elif op == "{":
+		brace_depth += 1
+	elif op == "}":
+		brace_depth -= 1
+		if brace_depth < 0:
+			errors.append("Line %d:%d: Unbalanced '}'" % [line_num, col])
+			brace_depth = 0

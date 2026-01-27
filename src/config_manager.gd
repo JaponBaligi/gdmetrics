@@ -1,5 +1,5 @@
 # class_name ConfigManager  # Commented out to avoid parse-time cascade in Godot 4.x
-extends RefCounted
+extends Object
 
 # Configuration manager
 # handles JSON configuration parsing, validation, and defaults
@@ -81,11 +81,15 @@ func _init(config_file_path: String = ""):
 		load_config(config_file_path)
 
 func _ensure_file_helper():
-	# Lazy load file helper for Godot 3.x to avoid parse-time cascade
+	# Lazy load file helper to avoid parse-time cascade in Godot 3.x
 	if _file_helper != null:
 		return
 	if _is_godot_3:
 		var helper_script = load("res://src/gd3/file_helper.gd")
+		if helper_script != null:
+			_file_helper = helper_script.new()
+	else:
+		var helper_script = load("res://src/gd4/file_helper.gd")
 		if helper_script != null:
 			_file_helper = helper_script.new()
 
@@ -97,37 +101,22 @@ func load_config(config_file_path: String) -> bool:
 	
 	var json_text: String = ""
 	
-	# Use native APIs in Godot 4.x to avoid loading gd3 files
-	if not _is_godot_3:
-		# Use Godot 4.x APIs directly
-		if not FileAccess.file_exists(config_file_path):
-			errors.append("Config file not found: %s (using defaults)" % config_file_path)
-			return false
-		
-		var f = FileAccess.open(config_file_path, FileAccess.READ)
-		if f == null:
-			errors.append("Failed to open config file: %s (using defaults)" % config_file_path)
-			return false
-		
-		json_text = f.get_as_text()
-		f = null  # FileAccess auto-closes
-	else:
-		# Use file helper for Godot 3.x
-		if _file_helper == null:
-			errors.append("File helper not available (using defaults)")
-			return false
-		
-		if not _file_helper.file_exists(config_file_path):
-			errors.append("Config file not found: %s (using defaults)" % config_file_path)
-			return false
-		
-		var f = _file_helper.open_read(config_file_path)
-		if f == null:
-			errors.append("Failed to open config file: %s (using defaults)" % config_file_path)
-			return false
-		
-		json_text = f.get_as_text()
-		_file_helper.close_file(f)
+	# Use file helper for both 3.x and 4.x to avoid parse-time API issues
+	if _file_helper == null:
+		errors.append("File helper not available (using defaults)")
+		return false
+	
+	if not _file_helper.file_exists(config_file_path):
+		errors.append("Config file not found: %s (using defaults)" % config_file_path)
+		return false
+	
+	var f = _file_helper.open_read(config_file_path)
+	if f == null:
+		errors.append("Failed to open config file: %s (using defaults)" % config_file_path)
+		return false
+	
+	json_text = f.get_as_text()
+	_file_helper.close_file(f)
 	
 	# Parse JSON - Godot 4.x only in this testing project
 	var json = JSON.new()
