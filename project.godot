@@ -6,12 +6,94 @@
 ;   [section] ; section goes between []
 ;   param=value ; assign values to parameters
 
-config_version=5
+config_version=4
+
+_global_script_classes=[ {
+"base": "Reference",
+"class": "AnnotationManager",
+"language": "GDScript",
+"path": "res://addons/gdscript_complexity/gd3/annotation_manager.gd"
+}, {
+"base": "Reference",
+"class": "AsyncAnalyzer",
+"language": "GDScript",
+"path": "res://addons/gdscript_complexity/gd3/async_analyzer.gd"
+}, {
+"base": "Object",
+"class": "CCCalculator",
+"language": "GDScript",
+"path": "res://src/cc_calculator.gd"
+}, {
+"base": "Object",
+"class": "CacheManager",
+"language": "GDScript",
+"path": "res://src/cache_manager.gd"
+}, {
+"base": "Object",
+"class": "ClassDetector",
+"language": "GDScript",
+"path": "res://src/class_detector.gd"
+}, {
+"base": "Object",
+"class": "CogComplexityCalculator",
+"language": "GDScript",
+"path": "res://src/cog_complexity_calculator.gd"
+}, {
+"base": "Control",
+"class": "ComplexityDockPanel",
+"language": "GDScript",
+"path": "res://addons/gdscript_complexity/gd3/dock_panel.gd"
+}, {
+"base": "Object",
+"class": "ConfidenceCalculator",
+"language": "GDScript",
+"path": "res://src/confidence_calculator.gd"
+}, {
+"base": "AcceptDialog",
+"class": "ConfigDialog",
+"language": "GDScript",
+"path": "res://addons/gdscript_complexity/gd3/config_dialog.gd"
+}, {
+"base": "Object",
+"class": "ControlFlowDetector",
+"language": "GDScript",
+"path": "res://src/control_flow_detector.gd"
+}, {
+"base": "Object",
+"class": "FunctionDetector",
+"language": "GDScript",
+"path": "res://src/function_detector.gd"
+}, {
+"base": "Object",
+"class": "GDScriptTokenizer",
+"language": "GDScript",
+"path": "res://src/gd3/tokenizer.gd"
+}, {
+"base": "Node",
+"class": "TestClass",
+"language": "GDScript",
+"path": "res://tests/fixtures/class_with_inheritance.gd"
+} ]
+_global_script_class_icons={
+"AnnotationManager": "",
+"AsyncAnalyzer": "",
+"CCCalculator": "",
+"CacheManager": "",
+"ClassDetector": "",
+"CogComplexityCalculator": "",
+"ComplexityDockPanel": "",
+"ConfidenceCalculator": "",
+"ConfigDialog": "",
+"ControlFlowDetector": "",
+"FunctionDetector": "",
+"GDScriptTokenizer": "",
+"TestClass": ""
+}
 
 [application]
 
-config/features=PackedStringArray("4.2")
+config/features=PoolStringArray( "4.2" )
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/gdscript_complexity/plugin.cfg")
+enabled=PoolStringArray( "res://addons/gdscript_complexity/plugin.cfg" )

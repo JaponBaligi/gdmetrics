@@ -20,7 +20,10 @@ var open_button: Button = null
 var status_label: Label = null
 
 var tree_root: TreeItem = null
-var version_adapter: VersionAdapter = null
+var version_adapter = null
+var _cc_width = 60
+var _cog_width = 60
+var _confidence_width = 110
 
 func _ready():
 	version_adapter = preload("res://addons/gdscript_complexity/version_adapter.gd").new()
@@ -104,9 +107,12 @@ func _setup_ui():
 	results_tree.set_column_min_width(2, 60)
 	results_tree.set_column_min_width(3, 80)
 	results_tree.connect("item_activated", self, "_on_item_activated")
+	results_tree.connect("item_selected", self, "_on_item_selected")
+	results_tree.connect("resized", self, "_on_tree_resized")
 	vbox.add_child(results_tree)
 	
 	_apply_editor_theme()
+	_update_column_widths()
 
 func _apply_editor_theme():
 	if not Engine.is_editor_hint():
@@ -142,6 +148,12 @@ func _on_item_activated():
 	var target = _get_selected_target()
 	if target != null:
 		emit_signal("open_requested", target["script_path"], target["line"])
+
+func _on_item_selected():
+	_set_open_button_enabled(_get_selected_target() != null)
+
+func _on_tree_resized():
+	_update_column_widths()
 
 func set_status(text: String):
 	if status_label != null:
@@ -212,9 +224,26 @@ func _align_numeric_columns(item):
 	if item == null:
 		return
 	if item.has_method("set_text_align"):
-		item.call("set_text_align", 1, HALIGN_RIGHT)
-		item.call("set_text_align", 2, HALIGN_RIGHT)
-		item.call("set_text_align", 3, HALIGN_RIGHT)
+		item.call("set_text_align", 1, HALIGN_CENTER)
+		item.call("set_text_align", 2, HALIGN_CENTER)
+		item.call("set_text_align", 3, HALIGN_CENTER)
+
+func _set_open_button_enabled(enabled: bool):
+	if open_button != null:
+		open_button.disabled = not enabled
+
+func _update_column_widths():
+	if results_tree == null:
+		return
+	var total_width = results_tree.get_size().x
+	if total_width <= 0:
+		return
+	var fixed_width = _cc_width + _cog_width + _confidence_width + 20
+	var name_width = max(200, int(total_width - fixed_width))
+	results_tree.set_column_min_width(0, name_width)
+	results_tree.set_column_min_width(1, _cc_width)
+	results_tree.set_column_min_width(2, _cog_width)
+	results_tree.set_column_min_width(3, _confidence_width)
 
 func set_analyze_button_enabled(enabled: bool):
 	if analyze_button != null:

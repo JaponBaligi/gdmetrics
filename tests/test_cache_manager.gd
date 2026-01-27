@@ -3,7 +3,7 @@
 
 extends SceneTree
 
-func _initialize():
+func _init():
 	var separator = "============================================================"
 	print(separator)
 	print("Testing CacheManager")
@@ -14,7 +14,7 @@ func _initialize():
 	
 	# Test 1: Cache manager initialization
 	print("\n[Test 1] Cache manager initialization...")
-	var cache_manager = load("res://src/cache_manager.gd").new(".test_cache", true)
+	var cache_manager = load("res://src/cache_manager.gd").new("user://.test_cache", true)
 	if cache_manager == null:
 		print("FAILED: Failed to create cache manager")
 		tests_failed += 1
@@ -90,19 +90,13 @@ func _initialize():
 	cache_manager.store_result(test_file, config, test_file_result)
 	# Modify file content (simulate by creating a temp file with different content)
 	var temp_file = ".test_temp_file.gd"
-	# Create a temp file with different content
-	var version_info = Engine.get_version_info()
-	var is_godot_3 = version_info.get("major", 0) == 3
-	if is_godot_3:
-		var file = File.new()
-		file.open(temp_file, File.WRITE)
+	# Create a temp file with different content (Godot 3.x only)
+	var file = File.new()
+	if file.open(temp_file, File.WRITE) != OK:
+		print("SKIP: Cache file write test (File open failed)")
+	else:
 		file.store_string("# Different content")
 		file.close()
-	else:
-		var file = FileAccess.open(temp_file, FileAccess.WRITE)
-		if file != null:
-			file.store_string("# Different content")
-			file = null
 	
 	# Store result for temp file
 	var temp_result = load("res://src/batch_analyzer.gd").FileResult.new()
@@ -125,16 +119,10 @@ func _initialize():
 		print("WARNING: Failed to cache temp file (may be expected)")
 	
 	# Modify temp file content
-	if is_godot_3:
-		var file = File.new()
-		file.open(temp_file, File.WRITE)
+	file = File.new()
+	if file.open(temp_file, File.WRITE) == OK:
 		file.store_string("# Modified content - different")
 		file.close()
-	else:
-		var file = FileAccess.open(temp_file, FileAccess.WRITE)
-		if file != null:
-			file.store_string("# Modified content - different")
-			file = null
 	
 	# Try to retrieve - should be invalidated
 	var cached_after_modify = cache_manager.get_cached_result(temp_file, config)
@@ -146,22 +134,18 @@ func _initialize():
 		tests_passed += 1
 	
 	# Cleanup temp file
-	if is_godot_3:
-		var dir = Directory.new()
-		dir.remove(temp_file)
-	else:
-		var dir = DirAccess.open(".")
-		if dir != null:
-			dir.remove(temp_file)
+	var dir = Directory.new()
+	dir.remove(temp_file)
 	
 	# Test 6: Cache invalidation on config change
 	print("\n[Test 6] Cache invalidation on config change...")
 	# Store with original config
 	cache_manager.store_result(test_file, config, test_file_result)
 	# Modify config
-	var modified_config = config.duplicate()
-	modified_config.cc_config["threshold_warn"] = 999
-	var cached_after_config_change = cache_manager.get_cached_result(test_file, modified_config)
+	var original_warn = config.cc_config["threshold_warn"]
+	config.cc_config["threshold_warn"] = 999
+	var cached_after_config_change = cache_manager.get_cached_result(test_file, config)
+	config.cc_config["threshold_warn"] = original_warn
 	if cached_after_config_change.size() > 0:
 		print("FAILED: Cache was not invalidated after config change")
 		tests_failed += 1

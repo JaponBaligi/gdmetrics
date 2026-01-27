@@ -1,6 +1,6 @@
-# Run with: godot --script test_tokenizer.gd -- test_file.gd
+# Run with: godot --script tests/test_tokenizer.gd -- <file.gd>
 
-extends Reference
+extends SceneTree
 
 func _init():
 	var args = OS.get_cmdline_args()
@@ -15,7 +15,10 @@ func _init():
 		print("Usage: godot --script test_tokenizer.gd -- <file.gd>")
 		return
 	
-	var tokenizer = preload("res://src/tokenizer.gd").new()
+	var version_info = Engine.get_version_info()
+	var is_godot_3 = version_info.get("major", 0) == 3
+	var tokenizer_script = "res://src/gd3/tokenizer.gd" if is_godot_3 else "res://src/tokenizer.gd"
+	var tokenizer = load(tokenizer_script).new()
 	var tokens = tokenizer.tokenize_file(file_path)
 	var errors = tokenizer.get_errors()
 	
@@ -111,7 +114,8 @@ func _init():
 	print("")
 	print("=== Confidence Score ===")
 	var confidence_calc = preload("res://src/confidence_calculator.gd").new()
-	var confidence_result = confidence_calc.calculate_confidence(tokens, errors, "4.0")
+	var version_adapter = load("res://addons/gdscript_complexity/version_adapter.gd").new()
+	var confidence_result = confidence_calc.calculate_confidence(tokens, errors, version_adapter)
 	print("Confidence Score: %.2f" % confidence_result.score)
 	print("Components:")
 	print("  Token Coverage: %.2f" % confidence_result.components["token_coverage"])
@@ -123,3 +127,4 @@ func _init():
 	
 	print("")
 	print("=== End Test ===")
+	quit(0)

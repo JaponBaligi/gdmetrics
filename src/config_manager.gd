@@ -128,14 +128,11 @@ func load_config(config_file_path: String) -> bool:
 	json_text = f.get_as_text()
 	_file_helper.close_file(f)
 	
-	# Parse JSON - Godot 4.x only in this testing project
-	var json = JSON.new()
-	var parse_result = json.parse(json_text)
-	if parse_result != OK:
-		errors.append(_format_error("CONFIG_INVALID_JSON", "Invalid JSON in config file: %s (using defaults)" % json.get_error_message()))
+	# Parse JSON via file helper for 3.x/4.x compatibility
+	var data = _file_helper.parse_json(json_text)
+	if data.size() == 0:
+		errors.append(_format_error("CONFIG_INVALID_JSON", "Invalid JSON in config file: %s (using defaults)" % config_file_path))
 		return false
-	
-	var data = json.get_data()
 	
 	if not data is Dictionary:
 		errors.append(_format_error("CONFIG_INVALID_ROOT", "Config file must contain a JSON object (using defaults)"))

@@ -26,3 +26,12 @@ func close_file(file):
 func write_line(file, text: String):
 	if file != null:
 		file.store_string(text + "\n")
+
+func parse_json(content: String) -> Dictionary:
+	var json = JSON.new()
+	if json.parse(content) != OK:
+		return {}
+	return json.get_data()
+
+func stringify_json(data: Dictionary) -> String:
+	return JSON.stringify(data, "  ")

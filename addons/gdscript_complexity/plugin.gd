@@ -1,4 +1,4 @@
-@tool
+tool
 extends EditorPlugin
 
 var dock_panel: Control = null
@@ -59,14 +59,13 @@ func _enter_tree():
 		async_analyzer_script = "res://addons/gdscript_complexity/gd4/async_analyzer.gd"
 	async_analyzer = load(async_analyzer_script).new()
 	async_analyzer.batch_size = 10
-	# Use Godot 4.x Callable syntax (required for 4.x parser)
-	async_analyzer.connect("progress_updated", Callable(self, "_on_progress_updated"))
-	async_analyzer.connect("file_analyzed", Callable(self, "_on_file_analyzed"))
-	async_analyzer.connect("analysis_complete", Callable(self, "_on_analysis_complete"))
-	async_analyzer.connect("analysis_cancelled", Callable(self, "_on_analysis_cancelled"))
+	async_analyzer.connect("progress_updated", self, "_on_progress_updated")
+	async_analyzer.connect("file_analyzed", self, "_on_file_analyzed")
+	async_analyzer.connect("analysis_complete", self, "_on_analysis_complete")
+	async_analyzer.connect("analysis_cancelled", self, "_on_analysis_cancelled")
 	# Connect process_next_batch_requested signal for Godot 3.x deferred processing
 	if version_adapter.is_godot_3:
-		async_analyzer.connect("process_next_batch_requested", Callable(self, "_on_process_next_batch_requested"))
+		async_analyzer.connect("process_next_batch_requested", self, "_on_process_next_batch_requested")
 	
 	var annotation_manager_script: String
 	if is_godot_3:
@@ -90,38 +89,36 @@ func _enter_tree():
 	config_dialog = load(config_dialog_script).new()
 	config_dialog.set_config_manager(config_manager)
 	config_dialog.set_config_path("res://complexity_config.json")
-	# Use Godot 4.x Callable syntax (required for 4.x parser)
-	config_dialog.connect("config_saved", Callable(self, "_on_config_saved"))
+	config_dialog.connect("config_saved", self, "_on_config_saved")
 	add_child(config_dialog)
 	
-	# Use Godot 4.x Callable syntax (required for 4.x parser)
 	# Verify method exists before connecting (helps debug connection issues)
 	if not has_method("_on_analyze_requested"):
 		logger.log_with_code("error", "ANALYSIS_FAILED", "_on_analyze_requested method not found")
 	else:
-		var connect_result = dock_panel.connect("analyze_requested", Callable(self, "_on_analyze_requested"))
+		var connect_result = dock_panel.connect("analyze_requested", self, "_on_analyze_requested")
 		if connect_result != OK:
 			logger.log_with_code("error", "ANALYSIS_FAILED", "Failed to connect analyze_requested signal: %d" % connect_result)
 		else:
 			logger.log_message("info", "Successfully connected analyze_requested signal")
 	
 	if has_method("_on_cancel_requested"):
-		dock_panel.connect("cancel_requested", Callable(self, "_on_cancel_requested"))
+		dock_panel.connect("cancel_requested", self, "_on_cancel_requested")
 	else:
 		logger.log_with_code("error", "ANALYSIS_FAILED", "_on_cancel_requested method not found")
 	
 	if has_method("_on_config_requested"):
-		dock_panel.connect("config_requested", Callable(self, "_on_config_requested"))
+		dock_panel.connect("config_requested", self, "_on_config_requested")
 	else:
 		logger.log_with_code("error", "ANALYSIS_FAILED", "_on_config_requested method not found")
 	
 	if has_method("_on_export_requested"):
-		dock_panel.connect("export_requested", Callable(self, "_on_export_requested"))
+		dock_panel.connect("export_requested", self, "_on_export_requested")
 	else:
 		logger.log_with_code("error", "ANALYSIS_FAILED", "_on_export_requested method not found")
 
 	if has_method("_on_open_requested"):
-		dock_panel.connect("open_requested", Callable(self, "_on_open_requested"))
+		dock_panel.connect("open_requested", self, "_on_open_requested")
 	else:
 		logger.log_with_code("error", "ANALYSIS_FAILED", "_on_open_requested method not found")
 	
@@ -133,7 +130,7 @@ func _enter_tree():
 		process_timer.autostart = false
 		add_child(process_timer)
 		# Note: This will only execute in Godot 3.x, but parser requires 4.x syntax
-		process_timer.connect("timeout", Callable(self, "_process_next_batch_deferred"))
+		process_timer.connect("timeout", self, "_process_next_batch_deferred")
 	
 		logger.log_message("info", "Plugin initialized successfully")
 

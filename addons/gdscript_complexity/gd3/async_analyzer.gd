@@ -15,12 +15,12 @@ var update_interval: float = 0.1
 var cancelled: bool = false
 var is_running: bool = false
 
-var batch_analyzer: BatchAnalyzer = null
+var batch_analyzer = null
 var files: Array = []
 var current_index: int = 0
-var project_result: BatchAnalyzer.ProjectResult = null
-var config: ConfigManager.Config = null
-var version_adapter: VersionAdapter = null
+var project_result = null
+var config = null
+var version_adapter = null
 var plugin_node: Node = null  # Reference to plugin node for deferred calls
 var logger = null
 var _error_codes = null
@@ -33,7 +33,7 @@ var _cc_calc_instance = null
 var _cog_calc_instance = null
 var _confidence_calc_instance = null
 
-func start_analysis(root_path: String, config_data: ConfigManager.Config, adapter: VersionAdapter = null, plugin: Node = null):
+func start_analysis(root_path: String, config_data, adapter = null, plugin: Node = null):
 	print("[AsyncAnalyzer] start_analysis called with root_path: %s" % root_path)
 	
 	if is_running:
@@ -87,7 +87,7 @@ func start_analysis(root_path: String, config_data: ConfigManager.Config, adapte
 	batch_size = 1
 	
 	print("[AsyncAnalyzer] Creating project_result...")
-	project_result = BatchAnalyzer.ProjectResult.new()
+	project_result = load("res://src/batch_analyzer.gd").ProjectResult.new()
 	if project_result == null:
 		push_error("[AsyncAnalyzer] Failed to create project_result!")
 		is_running = false
@@ -134,7 +134,7 @@ func _process_next_batch():
 	if file_result == null:
 		print("[AsyncAnalyzer] ERROR: File analysis returned null for: %s" % file_path)
 		# Create error result if analysis failed
-		file_result = BatchAnalyzer.FileResult.new()
+		file_result = load("res://src/batch_analyzer.gd").FileResult.new()
 		file_result.file_path = file_path
 		file_result.errors.append(_error_codes.format("ANALYSIS_FAILED", "Analysis failed: unexpected error"))
 		file_result.success = false
@@ -163,14 +163,14 @@ func _process_next_batch():
 		print("[AsyncAnalyzer] Last file processed, emitting final process_next_batch_requested for finalization")
 	emit_signal("process_next_batch_requested")
 
-func _analyze_file_safe(file_path: String) -> BatchAnalyzer.FileResult:
+func _analyze_file_safe(file_path: String):
 	# Wrapper function with error handling to prevent crashes
 	var result = null
 	result = _analyze_file(file_path)
 	return result
 
-func _analyze_file(file_path: String) -> BatchAnalyzer.FileResult:
-	var result = BatchAnalyzer.FileResult.new()
+func _analyze_file(file_path: String):
+	var result = load("res://src/batch_analyzer.gd").FileResult.new()
 	result.file_path = file_path
 	
 	# Check if file exists before processing

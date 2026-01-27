@@ -6,7 +6,7 @@ class_name ConfigDialog
 
 signal config_saved
 
-var config_manager: ConfigManager = null
+var config_manager = null
 var config_path: String = "res://complexity_config.json"
 
 # UI elements
@@ -215,7 +215,7 @@ func _save_config() -> bool:
 	
 	return _write_config_file(config)
 
-func _validate_config(config: ConfigManager.Config) -> bool:
+func _validate_config(config) -> bool:
 	if config.cc_config["threshold_warn"] < 0 or config.cc_config["threshold_fail"] < 0:
 		OS.alert("CC thresholds must be >= 0", "Validation Error")
 		return false
@@ -268,7 +268,7 @@ func _prettify_json(value, indent: String = "\t", current_indent: String = "") -
 	
 	return result
 
-func _write_config_file(config: ConfigManager.Config) -> bool:
+func _write_config_file(config) -> bool:
 	var config_dict = {
 		"include": config.include_patterns,
 		"exclude": config.exclude_patterns,
@@ -303,7 +303,7 @@ func _on_reset_pressed():
 	if config_manager == null:
 		return
 	
-	config_manager = ConfigManager.new()
+	config_manager = load("res://src/config_manager.gd").new()
 	_load_config()
 
 func _on_ok_pressed():
@@ -314,7 +314,7 @@ func _on_cancel_pressed():
 	# Cancel button closes dialog automatically in Godot 3.x
 	hide()
 
-func set_config_manager(manager: ConfigManager):
+func set_config_manager(manager):
 	config_manager = manager
 	if is_inside_tree():
 		_load_config()

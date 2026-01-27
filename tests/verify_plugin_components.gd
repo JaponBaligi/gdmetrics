@@ -35,7 +35,7 @@ func _check_dock_panel(is_godot_3: bool):
 	print("Checking dock_panel.gd...")
 	var file_helper_script = "res://tests/file_helper_3.gd" if is_godot_3 else "res://tests/file_helper_4.gd"
 	var file_helper = load(file_helper_script).new()
-	var path = "res://addons/gdscript_complexity/dock_panel.gd"
+	var path = "res://addons/gdscript_complexity/gd3/dock_panel.gd" if is_godot_3 else "res://addons/gdscript_complexity/gd4/dock_panel.gd"
 	if not file_helper.file_exists(path):
 		_errors.append("dock_panel.gd not found")
 		_passed = false
@@ -63,7 +63,7 @@ func _check_config_dialog(is_godot_3: bool):
 	print("Checking config_dialog.gd...")
 	var file_helper_script = "res://tests/file_helper_3.gd" if is_godot_3 else "res://tests/file_helper_4.gd"
 	var file_helper = load(file_helper_script).new()
-	var path = "res://addons/gdscript_complexity/config_dialog.gd"
+	var path = "res://addons/gdscript_complexity/gd3/config_dialog.gd" if is_godot_3 else "res://addons/gdscript_complexity/gd4/config_dialog.gd"
 	if not file_helper.file_exists(path):
 		_errors.append("config_dialog.gd not found")
 		_passed = false
@@ -91,16 +91,22 @@ func _check_annotation_manager(is_godot_3: bool):
 	print("Checking annotation_manager.gd...")
 	var file_helper_script = "res://tests/file_helper_3.gd" if is_godot_3 else "res://tests/file_helper_4.gd"
 	var file_helper = load(file_helper_script).new()
-	var path = "res://addons/gdscript_complexity/annotation_manager.gd"
+	var path = "res://addons/gdscript_complexity/gd3/annotation_manager.gd" if is_godot_3 else "res://addons/gdscript_complexity/gd4/annotation_manager.gd"
 	if not file_helper.file_exists(path):
 		_errors.append("annotation_manager.gd not found")
 		_passed = false
 		return
 	var content = file_helper.read_file(path)
-	if content.find("extends RefCounted") < 0:
-		_errors.append("annotation_manager.gd does not extend RefCounted")
-		_passed = false
-		return
+	if is_godot_3:
+		if content.find("extends Reference") < 0:
+			_errors.append("annotation_manager.gd does not extend Reference")
+			_passed = false
+			return
+	else:
+		if content.find("extends RefCounted") < 0:
+			_errors.append("annotation_manager.gd does not extend RefCounted")
+			_passed = false
+			return
 	if content.find("@tool") < 0:
 		_warnings.append("annotation_manager.gd missing @tool annotation")
 	if content.find("add_error_annotation") >= 0 and content.find("set_error") >= 0:
@@ -111,22 +117,28 @@ func _check_annotation_manager(is_godot_3: bool):
 
 func _check_async_analyzer():
 	print("Checking async_analyzer.gd...")
-	var file_helper_script = "res://tests/file_helper_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://tests/file_helper_4.gd"
+	var is_godot_3 = Engine.get_version_info().get("major", 0) == 3
+	var file_helper_script = "res://tests/file_helper_3.gd" if is_godot_3 else "res://tests/file_helper_4.gd"
 	var file_helper = load(file_helper_script).new()
-	var path = "res://addons/gdscript_complexity/async_analyzer.gd"
+	var path = "res://addons/gdscript_complexity/gd3/async_analyzer.gd" if is_godot_3 else "res://addons/gdscript_complexity/gd4/async_analyzer.gd"
 	if not file_helper.file_exists(path):
 		_errors.append("async_analyzer.gd not found")
 		_passed = false
 		return
 	var content = file_helper.read_file(path)
-	if content.find("extends RefCounted") < 0:
-		_errors.append("async_analyzer.gd does not extend RefCounted")
-		_passed = false
-		return
+	if is_godot_3:
+		if content.find("extends Reference") < 0:
+			_errors.append("async_analyzer.gd does not extend Reference")
+			_passed = false
+			return
+	else:
+		if content.find("extends RefCounted") < 0:
+			_errors.append("async_analyzer.gd does not extend RefCounted")
+			_passed = false
+			return
 	if content.find("@tool") < 0:
 		_warnings.append("async_analyzer.gd missing @tool annotation")
 	if content.find("files.is_empty()") >= 0:
-		var is_godot_3 = Engine.get_version_info().get("major", 0) == 3
 		if is_godot_3:
 			_api_differences.append("async_analyzer.gd uses is_empty() (4.x API) - should use size() == 0 in 3.x")
 		else:

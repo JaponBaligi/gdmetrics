@@ -7,10 +7,10 @@ class_name AnnotationManager
 var script_editor: Object = null
 var has_annotation_support: bool = false
 var annotation_api: String = "none" 
-var version_adapter: VersionAdapter = null
+var version_adapter = null
 var _supported_severities = ["error", "warning", "info"]
 
-func _init(adapter: VersionAdapter = null):
+func _init(adapter = null):
 	version_adapter = adapter
 	_detect_annotation_support()
 
@@ -78,7 +78,7 @@ func add_cog_warning(script_path: String, line: int, cog_value: int, threshold: 
 	var message = "High Cognitive Complexity: %d (threshold: %d)" % [cog_value, threshold]
 	add_complexity_annotation(script_path, line, message, "warning")
 
-func annotate_file_results(file_result: BatchAnalyzer.FileResult, cc_threshold: int, cog_threshold: int):
+func annotate_file_results(file_result, cc_threshold: int, cog_threshold: int):
 	if not file_result.success:
 		return
 	

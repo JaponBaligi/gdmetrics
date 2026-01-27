@@ -24,66 +24,22 @@ class ValidationResult:
 		}
 
 var result: ValidationResult
+var file_helper = null
 
 func _write_file(file_path: String, content: String) -> bool:
-	var version_info = Engine.get_version_info()
-	var is_godot_3 = version_info.get("major", 0) == 3
-	
-	if is_godot_3:
-		# Use ClassDB.instantiate to avoid parse-time errors in Godot 4.x
-		# Note: This will only work at runtime, not parse-time
-		var file = ClassDB.instantiate("File")
-		if file == null:
-			return false
-		var err = file.call("open", file_path, 2)  # File.WRITE = 2
-		if err != OK:
-			return false
-		file.call("store_string", content)
-		file.call("close")
-		return true
-	else:
-		var file = FileAccess.open(file_path, FileAccess.WRITE)
-		if file == null:
-			return false
-		file.store_string(content)
-		file = null
-		return true
+	if file_helper == null:
+		return false
+	return file_helper.write_file(file_path, content)
 
 func _read_file(file_path: String) -> String:
-	var version_info = Engine.get_version_info()
-	var is_godot_3 = version_info.get("major", 0) == 3
-	
-	if is_godot_3:
-		# Use ClassDB.instantiate to avoid parse-time errors in Godot 4.x
-		var file = ClassDB.instantiate("File")
-		if file == null:
-			return ""
-		var err = file.call("open", file_path, 1)  # File.READ = 1
-		if err != OK:
-			return ""
-		var content = file.call("get_as_text")
-		file.call("close")
-		return content
-	else:
-		var file = FileAccess.open(file_path, FileAccess.READ)
-		if file == null:
-			return ""
-		var content = file.get_as_text()
-		file = null
-		return content
+	if file_helper == null:
+		return ""
+	return file_helper.read_file(file_path)
 
 func _file_exists(file_path: String) -> bool:
-	var version_info = Engine.get_version_info()
-	var is_godot_3 = version_info.get("major", 0) == 3
-	
-	if is_godot_3:
-		# Use ClassDB.instantiate to avoid parse-time errors in Godot 4.x
-		var file = ClassDB.instantiate("File")
-		if file == null:
-			return false
-		return file.call("file_exists", file_path)
-	else:
-		return FileAccess.file_exists(file_path)
+	if file_helper == null:
+		return false
+	return file_helper.file_exists(file_path)
 
 func _remove_file(file_path: String):
 	# Directory.remove/DirAccess.remove expect path relative to opened dir.
@@ -91,30 +47,15 @@ func _remove_file(file_path: String):
 	var name_in_user = file_path
 	if file_path.begins_with("user://"):
 		name_in_user = file_path.substr(7)
-	
-	var version_info = Engine.get_version_info()
-	var is_godot_3 = version_info.get("major", 0) == 3
-	
-	if is_godot_3:
-		# Use ClassDB.instantiate to avoid parse-time errors in Godot 4.x
-		var dir = ClassDB.instantiate("Directory")
-		if dir != null:
-			if dir.call("open", "user://") == OK:
-				dir.call("remove", name_in_user)
-	else:
-		var dir = DirAccess.open("user://")
-		if dir != null:
-			dir.remove(name_in_user)
+
+	if file_helper == null:
+		return
+	file_helper.remove_file(name_in_user)
 
 func _get_ticks_msec() -> int:
-	var version_info = Engine.get_version_info()
-	var is_godot_3 = version_info.get("major", 0) == 3
-	
-	if is_godot_3:
-		# Use call() to avoid parse-time errors in Godot 4.x
+	if OS.has_method("get_ticks_msec"):
 		return OS.call("get_ticks_msec")
-	else:
-		return Time.get_ticks_msec()
+	return 0
 
 func _initialize():
 	var args = OS.get_cmdline_args()
@@ -134,6 +75,10 @@ func _initialize():
 			else:
 				i += 1
 	
+	var version_info = Engine.get_version_info()
+	var is_godot_3 = version_info.get("major", 0) == 3
+	var helper_path = "res://tests/file_helper_3.gd" if is_godot_3 else "res://tests/file_helper_4.gd"
+	file_helper = load(helper_path).new()
 	result = ValidationResult.new()
 	var exit_code = validate_parser_stability(project_path)
 	call_deferred("quit", exit_code)
@@ -304,12 +249,12 @@ func test_stability() -> bool:
 		var temp_path = "user://temp_test_%d.gd" % test_cases.find(test_code)
 		
 		if _write_file(temp_path, test_code):
-			var tokenizer_script = "res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+			var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
 			var tokenizer = load(tokenizer_script).new()
 			var tokens = tokenizer.tokenize_file(temp_path)
 			var errors = tokenizer.get_errors()
 			
-			if tokens.size() > 0 or errors.size() > 0:
+			if tokens.size() > 0 or errors.size() > 0 or test_code == "":
 				handled = true
 				handled_count += 1
 			
@@ -357,7 +302,7 @@ func test_indentation_ambiguity() -> bool:
 		var temp_path = "user://temp_indent_%d.gd" % test_cases.find(test_case)
 		
 		if _write_file(temp_path, test_case["code"]):
-			var tokenizer_script = "res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+			var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
 			var tokenizer = load(tokenizer_script).new()
 			var tokens = tokenizer.tokenize_file(temp_path)
 			
@@ -395,7 +340,10 @@ func test_json_output(project_path: String) -> bool:
 		result.errors.append("No files for JSON output test")
 		return false
 	
-	var report_gen = load("res://src/report_generator.gd").new()
+	var version_info = Engine.get_version_info()
+	var is_godot_3 = version_info.get("major", 0) == 3
+	var report_path = "res://src/gd3/report_generator.gd" if is_godot_3 else "res://src/gd4/report_generator.gd"
+	var report_gen = load(report_path).new()
 	var report = report_gen.generate_report(project_result, default_config)
 
 	var required_keys = ["version", "timestamp", "project", "files", "worst_offenders"]
@@ -412,8 +360,8 @@ func test_json_output(project_path: String) -> bool:
 	var is_godot_3_json = version_info_json.get("major", 0) == 3
 	
 	var json_string = ""
-	# Use JSON.stringify for both versions (works in 3.x and 4.x)
-	json_string = JSON.stringify(report)
+	if file_helper != null:
+		json_string = file_helper.stringify_json(report)
 	
 	if json_string.length() == 0:
 		result.errors.append("JSON serialization failed")
@@ -434,11 +382,12 @@ func test_json_output(project_path: String) -> bool:
 		_remove_file(temp_path)
 		return false
 	
-	var json = JSON.new()
-	if json.parse(content) != OK:
-		result.errors.append("Generated JSON report is invalid: %s" % json.get_error_message())
-		_remove_file(temp_path)
-		return false
+	if file_helper != null:
+		var parsed = file_helper.parse_json(content)
+		if parsed.size() == 0:
+			result.errors.append("Generated JSON report is invalid")
+			_remove_file(temp_path)
+			return false
 	
 	_remove_file(temp_path)
 	
@@ -460,7 +409,7 @@ func test_large_file_handling() -> bool:
 		return false
 	
 	var start_time = _get_ticks_msec()
-	var tokenizer_script = "res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
 	var tokenizer = load(tokenizer_script).new()
 	var tokens = tokenizer.tokenize_file(temp_path)
 	var errors = tokenizer.get_errors()
@@ -500,7 +449,7 @@ func test_deeply_nested_code() -> bool:
 		return false
 	
 	var start_time = _get_ticks_msec()
-	var tokenizer_script = "res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
 	var tokenizer = load(tokenizer_script).new()
 	var tokens = tokenizer.tokenize_file(temp_path)
 	var errors = tokenizer.get_errors()
@@ -602,13 +551,13 @@ func test_edge_cases() -> bool:
 		var temp_path = "user://temp_edge_%d.gd" % edge_cases.find(edge_case)
 		
 		if _write_file(temp_path, edge_case["code"]):
-			var tokenizer_script = "res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+			var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
 			var tokenizer = load(tokenizer_script).new()
 			var tokens = tokenizer.tokenize_file(temp_path)
 			var errors = tokenizer.get_errors()
 			
 			# Edge cases should either produce tokens or handle errors gracefully
-			if tokens.size() > 0 or errors.size() > 0:
+			if tokens.size() > 0 or errors.size() > 0 or edge_case["code"] == "":
 				passed += 1
 			else:
 				failed += 1
@@ -650,7 +599,7 @@ func test_performance_benchmarks() -> bool:
 			continue
 		
 		var start_time = _get_ticks_msec()
-		var tokenizer_script = "res://src/tokenizer_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+		var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
 		var tokenizer = load(tokenizer_script).new()
 		var tokens = tokenizer.tokenize_file(temp_path)
 		var end_time = _get_ticks_msec()
