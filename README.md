@@ -46,8 +46,6 @@ Then:
 3. Go to **Project > Project Settings > Plugins**
 4. Enable "GDScript Complexity Analyzer"
 
-> **Note**: See [Branch Strategy](docs/BRANCH_STRATEGY.md) for details on why separate branches are used.
-
 ## Usage
 
 ### Editor Plugin
