@@ -72,9 +72,27 @@ godot --script cli/ci_test.gd -- --project-path . --output report.json --csv-out
 
 The report will be written to `report.json`. On Godot 3.5, a fallback copy is also written to `user://ci_report_fallback.json` (see `OS.get_user_data_dir()` for location).
 
+### Usage Examples
+
+- Analyze a project and export JSON + CSV:
+```bash
+godot --headless --script cli/ci_test.gd -- --project-path . --output report.json --csv-output report.csv
+```
+- Enable auto export in config:
+```json
+{
+  "report": {
+    "formats": ["json", "csv"],
+    "output_path": "res://complexity_report.json",
+    "csv_output_path": "res://complexity_report.csv",
+    "auto_export": true
+  }
+}
+```
+
 ## Configuration
 
-Create a `complexity_config.json` file in your project root (or refactor `complexity_config.example.json` ):
+Create a `complexity_config.json` file in your project root (or copy `complexity_config.example.json`):
 
 ```json
 {
@@ -108,6 +126,21 @@ Create a `complexity_config.json` file in your project root (or refactor `comple
 }
 ```
 
+### Configuration Reference (Common Fields)
+
+- `include`: file patterns to analyze (default: `["res://**/*.gd"]`)
+- `exclude`: file patterns to skip
+- `cc.threshold_warn` / `cc.threshold_fail`: CC warning/fail thresholds
+- `cog.threshold_warn` / `cog.threshold_fail`: C-COG warning/fail thresholds
+- `report.formats`: list of report outputs (`json`, `csv`)
+- `report.output_path`: JSON output path
+- `report.csv_output_path`: CSV output path
+- `report.auto_export`: auto write after analysis
+- `performance.enable_caching`: enable incremental caching
+- `performance.cache_path`: cache directory
+
+For full options, see `complexity_config.example.json`.
+
 ## Known Issues
 
 - **Editor shutdown leak warnings**: Godot may print `ObjectDB instances leaked at exit` with `GDScript` resources (e.g. `logger.gd`, `batch_analyzer.gd`). These are engine-level script cache artifacts seen in the editor after plugin use. They do not affect analysis output. If needed, run the editor with `--verbose` and capture the shutdown log for investigation.
@@ -127,6 +160,21 @@ Cache is stored in `.gdcomplexity_cache/` by default (configurable via `cache_pa
 ### Auto Export
 
 Set `"report.auto_export": true` to automatically write reports after analysis. Formats are controlled by `"report.formats"` (e.g., `["json", "csv"]`).
+
+## Troubleshooting
+
+- **No editor annotations**: Godot 3.x does not support editor annotations. On Godot 4.x, if annotations are unavailable, the plugin logs warnings to the console.
+- **CSV not generated**: Ensure `report.formats` includes `csv`, set `report.csv_output_path`, or pass `--csv-output` in CLI mode.
+- **Files analyzed: 0**: Check `include`/`exclude` patterns and confirm the project contains `.gd` files under `res://`.
+- **Stale results**: Disable caching (`performance.enable_caching = false`) or delete the cache directory.
+- **Low confidence scores**: The parser is block-oriented and not a full AST; review `Known Limitations` and `Confidence Scores`.
+
+## FAQ
+
+- **Does it modify my scripts?** No. It only reads `.gd` files and generates reports.
+- **Why is Godot 3.x less accurate?** Godot 3.x has fewer parser hooks and a different grammar; the analyzer uses heuristics.
+- **Which branch should I use?** `main` for Godot 3.x, `godot4` for Godot 4.x.
+- **Can I disable editor warnings?** Yes. Set `report.annotate_editor` to `false`.
 
 ## Supported Versions
 
@@ -240,8 +288,11 @@ This is a pre-Phase 5 project. Core functionality is complete, but testing and p
 ## Documentation
 
 - [Branch Strategy](docs/BRANCH_STRATEGY.md) - Branch structure and version support
+- [User Guide](docs/USER_GUIDE.md) - Installation, configuration, usage, troubleshooting
+- [Technical Documentation](docs/TECHNICAL.md) - Architecture and parser details
 - [Progress Tracking](docs/PROGRESS.md) - Implementation status
 - [Compatibility Matrix](docs/COMPATIBILITY.md) - Version support details
+- [Breaking Changes Log](docs/BREAKING_CHANGES.md) - Release-impacting changes
 - [Before Phase 5](docs/before5.md) - Pre-Phase 5 roadmap
 
 

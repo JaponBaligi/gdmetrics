@@ -82,7 +82,5 @@ temp/
 !**/tsconfig.json
 
 # Docs, will release later
-docs/
-
-#tests, will release later
-tests/
+docs/PLAN.md
+docs/PROGRESS.md
