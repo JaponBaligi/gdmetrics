@@ -8,12 +8,46 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  test_legacy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Godot 3.5.3 (legacy)
+        run: |
+          curl -L -o godot_legacy.zip https://github.com/godotengine/godot-builds/releases/download/3.5.3-stable/Godot_v3.5.3-stable_x11.64.zip
+          unzip -q godot_legacy.zip -d godot_legacy
+          sudo mv godot_legacy/Godot_v3.5.3-stable_x11.64 /usr/local/bin/godot
+          sudo chmod +x /usr/local/bin/godot
+
+      - name: Run CI analysis
+        run: |
+          godot --headless --version
+          godot --headless --script tests/ci_test.gd -- --project-path . --output ci_report.json --csv-output ci_report.csv
+
+      - name: Verify fixtures
+        run: godot --headless --script tests/verify_cc_cog.gd
+
+      - name: Validate confidence (accuracy gate)
+        run: godot --headless --script tests/validate_confidence.gd -- --min-r2 0.70 --metrics-out ci_metrics.json
+
+      - name: Upload CI artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-artifacts-3.5.3
+          path: |
+            ci_report.json
+            ci_report.csv
+            ci_metrics.json
+
+  test_modern:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        godot-version: ["3.5.3", "4.0.4", "4.2.0"]
+        godot-version: ["4.0.4", "4.2.0"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,7 +82,7 @@ jobs:
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: test
+    needs: [test_legacy, test_modern]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
