@@ -23,8 +23,8 @@ var default_weights: Dictionary = {
 	# Tuned via tests/validate_confidence.gd (r^2 > 0.7)
 	"token_coverage": 0.0,
 	"indentation_consistency": 0.0,
-	"block_balance": 1.0,
-	"parse_errors": 0.0
+	"block_balance": 0.0,
+	"parse_errors": 1.0
 }
 
 var result: ConfidenceResult

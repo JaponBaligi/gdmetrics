@@ -16,6 +16,7 @@ accuracy_report_*.json
 test_results.json
 *.report.json
 *.report.csv
+ci_metrics.json
 
 # Cache and logs
 .complexity_cache/
