@@ -23,6 +23,7 @@ jobs:
         with:
           version: ${{ matrix.godot-version }}
           include-templates: false
+          use-dotnet: false
 
       - name: Run CI analysis
         run: |
