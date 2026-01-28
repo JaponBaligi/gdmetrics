@@ -28,15 +28,15 @@ This repository uses separate branches for different Godot versions:
 
 **For Godot 3.x:**
 ```bash
-git clone <https://github.com/JaponBaligi/gdmetrics>
-cd godot_cc
+git clone https://github.com/JaponBaligi/gdmetrics
+cd gdmetrics
 # Already on main branch, or: git checkout main
 ```
 
 **For Godot 4.x:**
 ```bash
-git clone <https://github.com/JaponBaligi/gdmetrics>
-cd godot_cc
+git clone https://github.com/JaponBaligi/gdmetrics
+cd gdmetrics
 git checkout godot4
 ```
 
@@ -289,6 +289,8 @@ See [LICENSE](LICENSE) file for details.
 - [Compatibility Matrix](docs/COMPATIBILITY.md) - Version support details
 - [Breaking Changes Log](docs/BREAKING_CHANGES.md) - Release-impacting changes
 - [Error Codes](docs/ERROR_CODES.md) - Standardized error codes and severities
+- [Distribution Guide](docs/DISTRIBUTION.md) - Release packaging and tags
+- [Changelog Template](docs/CHANGELOG_TEMPLATE.md) - Release notes format
 
 
 ## Special Thanks
