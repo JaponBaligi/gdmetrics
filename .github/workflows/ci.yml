@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main, godot4]
+  pull_request:
+    branches: [main, godot4]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        godot-version: ["3.5.3", "4.0.4", "4.2.0"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v1
+        with:
+          version: ${{ matrix.godot-version }}
+          include-templates: false
+
+      - name: Run CI analysis
+        run: |
+          godot --headless --version
+          godot --headless --script tests/ci_test.gd -- --project-path . --output ci_report.json --csv-output ci_report.csv
+
+      - name: Verify fixtures
+        run: godot --headless --script tests/verify_cc_cog.gd
+
+      - name: Validate confidence (accuracy gate)
+        run: godot --headless --script tests/validate_confidence.gd -- --min-r2 0.70 --metrics-out ci_metrics.json
+
+      - name: Upload CI artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-artifacts-${{ matrix.godot-version }}
+          path: |
+            ci_report.json
+            ci_report.csv
+            ci_metrics.json
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Package release
+        run: |
+          mkdir -p dist
+          zip -r dist/gdscript_complexity-${{ github.ref_name }}.zip \
+            addons/gdscript_complexity \
+            docs/USER_GUIDE.md \
+            docs/TECHNICAL.md \
+            docs/COMPATIBILITY.md \
+            docs/BREAKING_CHANGES.md \
+            docs/ERROR_CODES.md \
+            README.md \
+            LICENSE \
+            complexity_config.example.json
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdscript_complexity-${{ github.ref_name }}
+          path: dist/gdscript_complexity-${{ github.ref_name }}.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/gdscript_complexity-${{ github.ref_name }}.zip

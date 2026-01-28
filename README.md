@@ -289,6 +289,8 @@ See [LICENSE](LICENSE) file for details.
 - [Compatibility Matrix](docs/COMPATIBILITY.md) - Version support details
 - [Breaking Changes Log](docs/BREAKING_CHANGES.md) - Release-impacting changes
 - [Error Codes](docs/ERROR_CODES.md) - Standardized error codes and severities
+- [Distribution Guide](docs/DISTRIBUTION.md) - Release packaging and tags
+- [Changelog Template](docs/CHANGELOG_TEMPLATE.md) - Release notes format
 
 
 ## Special Thanks

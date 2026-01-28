@@ -1,5 +1,5 @@
 # Confidence validation and tuning tool
-# Run with: godot --headless --script tests/validate_confidence.gd -- [--apply] [--step 0.1]
+# Run with: godot --headless --script tests/validate_confidence.gd -- [--apply] [--step 0.1] [--min-r2 0.7] [--metrics-out path]
 
 extends SceneTree
 
@@ -32,6 +32,9 @@ func _run():
 	var args = OS.get_cmdline_args()
 	var apply_weights = false
 	var step = 0.1
+	var enforce_min_r2 = false
+	var min_r2 = 0.0
+	var metrics_output = ""
 	
 	var dash_index = args.find("--")
 	if dash_index >= 0:
@@ -40,6 +43,11 @@ func _run():
 				apply_weights = true
 			elif args[i] == "--step" and i + 1 < args.size():
 				step = float(args[i + 1])
+			elif args[i] == "--min-r2" and i + 1 < args.size():
+				enforce_min_r2 = true
+				min_r2 = float(args[i + 1])
+			elif args[i] == "--metrics-out" and i + 1 < args.size():
+				metrics_output = args[i + 1]
 	
 	var version_adapter = load("res://addons/gdscript_complexity/version_adapter.gd").new()
 	var config_manager = load("res://src/config_manager.gd").new()
@@ -57,6 +65,14 @@ func _run():
 	var tune_result = _tune_weights(scores, step)
 	print("Best r^2: %.4f" % tune_result.r2)
 	print("Best weights: %s" % str(tune_result.weights))
+
+	if metrics_output != "":
+		_write_metrics(metrics_output, current_r2, tune_result.r2, tune_result.weights, step)
+	
+	var exit_code = 0
+	if enforce_min_r2 and current_r2 < min_r2:
+		print("ERROR: Current r^2 %.4f is below required minimum %.4f" % [current_r2, min_r2])
+		exit_code = 1
 	
 	if tune_result.r2 > current_r2 and apply_weights:
 		if _apply_weights_to_config(tune_result.weights):
@@ -64,7 +80,7 @@ func _run():
 		else:
 			print("Failed to write complexity_config.json")
 	
-	call_deferred("quit", 0)
+	call_deferred("quit", exit_code)
 
 func _collect_scores(config, version_adapter) -> Array:
 	var scores = []
@@ -234,3 +250,15 @@ func _apply_weights_to_config(weights: Dictionary) -> bool:
 	var json_text = file_helper.stringify_json(data)
 	
 	return file_helper.write_file(file_path, json_text)
+
+func _write_metrics(output_path: String, current_r2: float, best_r2: float, best_weights: Dictionary, step: float) -> void:
+	var file_helper_script = "res://tests/file_helper_3.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://tests/file_helper_4.gd"
+	var file_helper = load(file_helper_script).new()
+	var payload = {
+		"current_r2": current_r2,
+		"best_r2": best_r2,
+		"best_weights": best_weights,
+		"step": step
+	}
+	var json_text = file_helper.stringify_json(payload)
+	file_helper.write_file(output_path, json_text)

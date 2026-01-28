@@ -1,0 +1,11 @@
+addons/gdscript_complexity/
+docs/USER_GUIDE.md
+docs/TECHNICAL.md
+docs/COMPATIBILITY.md
+docs/BREAKING_CHANGES.md
+docs/ERROR_CODES.md
+docs/DISTRIBUTION.md
+docs/CHANGELOG_TEMPLATE.md
+README.md
+LICENSE
+complexity_config.example.json

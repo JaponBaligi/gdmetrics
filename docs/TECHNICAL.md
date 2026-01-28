@@ -46,4 +46,13 @@ Reports:
 - Parser is not a full AST; complex expressions can reduce accuracy.
 - Godot 3.x does not support editor annotations.
 - `match` is not supported on Godot 3.x.
-*** End Patch"}]}
+
+## CI/CD Pipeline
+
+The CI workflow runs a multi-version test matrix to validate correctness and performance:
+- Godot versions: 3.5.3, 4.0.4, 4.2.0
+- Scripts: `tests/ci_test.gd`, `tests/verify_cc_cog.gd`, `tests/validate_confidence.gd`
+- Accuracy gate: `Current r^2` must be >= 0.70
+- Artifacts: JSON/CSV reports and accuracy metrics
+
+Tag builds (`v*`) create a release zip containing the plugin, documentation, and example config.
