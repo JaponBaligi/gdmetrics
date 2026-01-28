@@ -1,7 +1,5 @@
 @tool
 extends AcceptDialog
-# class_name ConfigDialog  # Commented out to avoid parse-time cascade
-
 signal config_saved
 
 var config_manager = null  # ConfigManager - loaded dynamically
@@ -119,8 +117,6 @@ func _setup_ui():
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button_row.add_child(spacer)
 	
-	# In Godot 4.x, AcceptDialog buttons are accessed via get_ok_button()
-	# Cancel is handled automatically when dialog is closed (no need to connect)
 	var ok_button = get_ok_button()
 	if ok_button != null:
 		ok_button.pressed.connect(_on_ok_pressed)

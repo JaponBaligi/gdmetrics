@@ -1,8 +1,6 @@
 extends Object
 
 # Tokenizer for GDScript (Godot 4.x version)
-# Note: class_name is declared in gd3/tokenizer.gd for 3.x compatibility
-# This file is for Godot 4.x only 
 
 var file_helper = null
 
