@@ -14,12 +14,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare legacy project file
+        run: |
+          mv project.godot project.godot.gd4
+          cat <<'EOF' > project.godot
+          ; Engine configuration file.
+          ; It's best edited using the editor UI and not directly,
+          ; since the parameters that go here are not all obvious.
+          ;
+          ; Format:
+          ;   [section] ; section goes between []
+          ;   param=value ; assign values to parameters
+
+          config_version=4
+
+          [application]
+
+          config/name="gdscript_complexity"
+          EOF
+
       - name: Download Godot 3.5.3 (legacy)
         run: |
           curl -L -o godot_legacy.zip https://github.com/godotengine/godot-builds/releases/download/3.5.3-stable/Godot_v3.5.3-stable_x11.64.zip
           unzip -q godot_legacy.zip -d godot_legacy
           sudo mv godot_legacy/Godot_v3.5.3-stable_x11.64 /usr/local/bin/godot
           sudo chmod +x /usr/local/bin/godot
+
+      - name: Start Xvfb
+        run: |
+          Xvfb :99 -screen 0 1024x768x24 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
 
       - name: Run CI analysis
         run: |
