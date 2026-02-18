@@ -62,6 +62,25 @@ Then:
 3. Go to **Project > Project Settings > Plugins**
 4. Enable "GDScript Complexity Analyzer"
 
+## Supported Versions
+
+**This plugin is a source-based addon with no prebuilt binaries.** Version numbers indicate code maturity, not binary stability.
+
+| Godot Version | Support Level | CI Testing | Notes |
+|---------------|---------------|------------|-------|
+| 4.x (tested on 4.2) | ✅ **Actively supported** | ✅ Yes | Recommended for new projects; full CC and C-COG metrics; `match`/`case` support; highest accuracy (90-93%) |
+| 3.5.x LTS | ⚠️ **Legacy / Experimental** | ❌ No | Historical support; core metrics work; lower accuracy (85-90%) due to parser limitations; for existing projects only |
+| 3.0-3.4 | ⚠️ **Legacy / Experimental** | ❌ No | Not officially tested; best-effort support; not recommended for new projects |
+| 4.0-4.1 | ✅ **Supported** | ❌ No* | Should work identically to 4.2; contact maintainer for specific version testing |
+| 4.3+ | ⚠️ **Forward compatible** | ❌ No* | Untested; likely works but not officially verified |
+
+**Why Godot 3.x is not CI-tested:**
+Upstream Godot 3.x binary availability is limited. CI infrastructure focuses on Godot 4.2 (headless mode) to ensure test reproducibility and reliability. Godot 3.5.x remains acceptable for legacy projects but is not actively maintained.
+
+**Recommendation:** Use **Godot 4.x for new projects**. For existing Godot 3.5 LTS projects, this tool provides useful complexity metrics with reasonable accuracy.
+
+For detailed compatibility information, see [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+
 ## Usage
 
 ### Editor Plugin
@@ -202,6 +221,26 @@ Create a `complexity_config.json` file in your project root (or copy `complexity
 
 For full options, see `complexity_config.example.json`.
 
+## Configuration & Defaults
+
+**Default Behavior When No Config File is Present:**
+- If no `complexity_config.json` is found, the analyzer uses built-in defaults
+- Default patterns: `include: ["res://**/*.gd"]`, `exclude: ["res://addons/**"]`
+- Default CC thresholds: warn at 10, fail at 20
+- Default COG thresholds: warn at 15, fail at 30
+- Caching is **enabled by default** for performance
+
+**Missing Configuration Warnings in CI:**
+- CI logs may report "Using default configuration" if no config file is present
+- **These warnings are non-fatal** and do not cause test failures
+- Analysis proceeds normally with sensible defaults
+- To suppress warnings, create a `complexity_config.json` (or copy the `.example` file)
+
+**Configuration Stabilization:**
+- Current defaults are tuned for typical GDScript projects
+- Configuration schema and defaults will be stabilized in a later release (v1.0)
+- Breaking configuration changes may occur in releases before v1.0
+
 ## Known Issues
 
 - **Editor shutdown leak warnings**: Godot may print `ObjectDB instances leaked at exit` with `GDScript` resources (e.g. `logger.gd`, `batch_analyzer.gd`). These are engine-level script cache artifacts seen in the editor after plugin use. They do not affect analysis output. If needed, run the editor with `--verbose` and capture the shutdown log for investigation.
@@ -237,17 +276,7 @@ Set `"report.auto_export": true` to automatically write reports after analysis. 
 - **Which branch should I use?** `main` for Godot 3.x, `godot4` for Godot 4.x.
 - **Can I disable editor warnings?** Yes. Set `report.annotate_editor` to `false`.
 
-## Supported Versions
 
-| Godot Version | Support Level | Notes |
-|---------------|---------------|-------|
-| 3.5 LTS | ✅ Full | Primary 3.x target |
-| 3.0-3.4 | ⚠️ Best-effort | Should work, not fully tested |
-| 4.2 | ✅ Full | Primary 4.x target |
-| 4.0-4.1 | ✅ Full | Should work identically |
-| 4.3+ | ⚠️ Forward compatibility | Tested as released |
-
-See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) for detailed compatibility information.
 
 ## Godot 3.x vs 4.x: Key Differences
 
@@ -323,7 +352,80 @@ godot --headless --script tests/validate_confidence.gd -- --step 0.1
 godot --headless --script tests/validate_confidence.gd -- --step 0.1 --apply
 ```
 
+## CI & Testing Transparency
+
+### CI Infrastructure
+
+**CI Environment:**
+- **Godot Version**: 4.2.0 (headless mode only)
+- **OS**: Ubuntu Linux (latest)
+- **Frequency**: On every push to `godot4` branch, pull request, and tagged releases
+- **Status**: See GitHub Actions workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+
+### Fixture Files & Tokenization Errors
+
+**Malformed / Invalid Syntax Files:**
+- The test suite includes GDScript files with **intentionally invalid or malformed syntax**
+- These files are used to verify **error detection and graceful handling**
+- Tokenization errors in these files are **expected by design**
+- Such test files are **excluded from verification** and do **not fail CI**
+
+**CI Log Interpretation:**
+- CI logs may contain `[Tokenizer Error]`, `[Parse Error]`, or similar messages
+- **These are expected and normal** — they demonstrate the analyzer catches syntax issues
+- Log cleanliness does not determine CI success
+- CI success is determined solely by **test pass/fail status** (`// PASS`, `// FAIL` markers)
+
+### Known Godot Headless Mode Artifacts
+
+**ObjectDB / Resource Cleanup Warnings:**
+- Godot may print warnings like `ObjectDB instances leaked at exit` or `GDScript instances still referenced`
+- These are **known Godot headless mode artifacts** (not plugin bugs)
+- They typically reference cached scripts (e.g., `logger.gd`, `batch_analyzer.gd`)
+- These warnings do **not affect analysis output** and do **not fail CI**
+
+**Exit Code Handling:**
+- CI checks exit codes, not stderr/stdout log content
+- Exit code 0 = success, regardless of logged warnings
+- For detailed investigation, check uploaded CI artifacts (reports, metrics)
+
+### CI Success Criteria
+
+✅ CI passes when:
+- All fixture tests produce expected CC/COG values
+- All confidence validation thresholds are met
+- Tokenizer error handling is verified
+- No **unhandled exceptions** or crashes occur
+- Exit code is 0
+
+❌ CI fails when:
+- Fixture values mismatch expected results
+- Confidence validation thresholds not met
+- Unhandled exceptions occur
+- Exit code is non-zero
+
+**Log messages alone do not cause CI failure.**
+
 ## Known Limitations
+
+### Scope Clarification
+
+**What This Tool Is:**
+- **Static analyzer**: Examines code structure without executing it
+- **Metrics calculator**: Measures CC and C-COG based on control flow patterns
+- **Code analyzer**: Reports complexity findings for review and refactoring
+
+**What This Tool Is NOT:**
+- ❌ **Not a linter**: Does not enforce code style or conventions
+- ❌ **Not a compiler**: Does not perform semantic analysis or type checking
+- ❌ **Not a runtime profiler**: Does not measure execution time or memory usage
+- ❌ **Not a code fixer**: Does not modify or refactor code automatically
+
+**Error Reporting:**
+- Syntactically invalid files are **reported, not fixed**
+- Error messages identify problematic files but do not attempt repairs
+- Error reporting is part of **intended behavior**, not a limitation
+- Files with syntax errors are skipped; analysis continues on valid files
 
 This tool is a **static analyzer**, not a runtime profiler. Understand its limitations:
 
@@ -337,14 +439,7 @@ This tool is a **static analyzer**, not a runtime profiler. Understand its limit
 - **Confidence Cap**: Godot 3.x confidence scores capped at 0.90 maximum
 - **Match Statements**: Not supported in Godot 3.x (language limitation)
 - **Expression Parsing**: Shallow parsing (by design, sufficient for complexity metrics)
-
-### Scope Limitations
-
-- Not a performance profiler (doesn't measure execution time or memory)
-- Not a linter (doesn't check code style or conventions)
-- Not a runtime debugger
-- Cannot detect all logic errors or anti-patterns
-- Metrics reflect code structure, not actual complexity of algorithms
+- **Metrics reflect code structure**: Numbers measure structural complexity, not algorithmic complexity
 
 ### Practical Limitations
 
@@ -356,9 +451,51 @@ This tool is a **static analyzer**, not a runtime profiler. Understand its limit
 
 Confidence scores estimate parse reliability. Use `tests/validate_confidence.gd` to compute r² against fixtures and optionally write tuned weights to `complexity_config.json`. Default weights are tuned via this tool.
 
+## Release & Distribution Policy
+
+### Release Strategy
+
+**Git Tags = Tested Releases:**
+- Releases are tagged in git (e.g., `v0.1.0`, `v0.2.0`)
+- Git tags correspond to releases tested and verified via CI
+- Only versions with **passing CI tests** are tagged and released
+- Untagged commits may contain experimental features
+
+**Current Release Status:**
+- **v0.1.1** is labeled as **early release / pre-stable**
+- Version 0.1.1 is ready for use but subject to change
+- **Breaking changes may occur before v1.0.0** (see [docs/BREAKING_CHANGES.md](docs/BREAKING_CHANGES.md))
+- Configuration, CLI arguments, and output formats may change
+- Upgrades between 0.x versions may require manual adjustments
+
+### Distribution Channels
+
+**GitHub Releases:**
+- Official release packages available at https://github.com/JaponBaligi/gdmetrics/releases
+- Each release includes the `gdscript_complexity` addon zipped with documentation
+
+**itch.io:**
+- Releases are mirrored to itch.io for convenient access
+- itch.io releases **do not include separate binaries** — same source addon as GitHub
+- itch.io is a distribution mirror, not a separate build
+
+**Package Contents:**
+- Source code of `addons/gdscript_complexity/`
+- Documentation files (README, USER_GUIDE, TECHNICAL, etc.)
+- Example configuration files
+- **No prebuilt binaries, DLLs, or OS-specific artifacts included**
+
+### Version Stability Timeline
+
+- **v0.x (current)**: Rapid iteration; breaking changes possible
+- **v1.0 (planned)**: Stable API, configuration, and output formats
+- **v2.0+ (future)**: Major feature additions with backward compatibility
+
+For detailed breaking changes, see the [BREAKING_CHANGES.md](docs/BREAKING_CHANGES.md) log.
+
 ## Roadmap
 
-### Current Release
+### Current Release (v0.1.1)
 - ✅ CC and C-COG metrics
 - ✅ JSON and CSV export
 - ✅ Godot 3.x and 4.x support
