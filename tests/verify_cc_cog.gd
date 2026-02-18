@@ -27,8 +27,8 @@ var expected_values = {
 }
 
 func _init():
-	batch_analyzer = load("res://src/batch_analyzer.gd").new()
-	config_manager = load("res://src/config_manager.gd").new()
+	batch_analyzer = load("res://addons/gdscript_complexity/src/batch_analyzer.gd").new()
+	config_manager = load("res://addons/gdscript_complexity/src/config_manager.gd").new()
 	version_adapter = load("res://addons/gdscript_complexity/version_adapter.gd").new()
 	
 	run_verification()

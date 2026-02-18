@@ -2,6 +2,8 @@
 extends RefCounted
 # Processes files in batches without blocking UI
 
+const ADDON_SRC := "res://addons/gdscript_complexity/src/"
+
 signal progress_updated(current: int, total: int, file_path: String)
 signal file_analyzed(file_result)  # BatchAnalyzer.FileResult - loaded dynamically
 signal analysis_complete(project_result)  # BatchAnalyzer.ProjectResult - loaded dynamically
@@ -39,13 +41,13 @@ func start_analysis(root_path: String, config_data, adapter = null):  # ConfigMa
 	
 	config = config_data
 	version_adapter = adapter
-	_error_codes = load("res://src/error_codes.gd").new()
+	_error_codes = load(ADDON_SRC + "error_codes.gd").new()
 	_ensure_logger(config)
-	batch_analyzer = load("res://src/batch_analyzer.gd").new()
+	batch_analyzer = load(ADDON_SRC + "batch_analyzer.gd").new()
 	batch_analyzer.version_adapter = version_adapter
 	batch_analyzer.logger = logger
 	
-	var discovery_script = "res://src/gd3/file_discovery.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/gd4/file_discovery.gd"
+	var discovery_script = (ADDON_SRC + "gd3/file_discovery.gd") if Engine.get_version_info().get("major", 0) == 3 else (ADDON_SRC + "gd4/file_discovery.gd")
 	var discovery = load(discovery_script).new()
 	files = discovery.find_files(root_path, config.include_patterns, config.exclude_patterns)
 	
@@ -54,7 +56,7 @@ func start_analysis(root_path: String, config_data, adapter = null):  # ConfigMa
 		return
 	
 	# Create ProjectResult using helper method
-	var batch_script = load("res://src/batch_analyzer.gd")
+	var batch_script = load("ADDON_SRC + "batch_analyzer.gd")
 	project_result = batch_script.create_project_result()
 	project_result.total_files = files.size()
 	project_result.file_results = []
@@ -99,7 +101,7 @@ func _process_next_batch():
 
 func _analyze_file(file_path: String):  # -> BatchAnalyzer.FileResult - loaded dynamically
 	# Create FileResult using helper method
-	var batch_script = load("res://src/batch_analyzer.gd")
+	var batch_script = load("ADDON_SRC + "batch_analyzer.gd")
 	var result = batch_script.create_file_result()
 	result.file_path = file_path
 	_ensure_tools()
@@ -216,7 +218,7 @@ func _calculate_worst_offenders():
 	project_result.worst_cog_files = cog_sorted.slice(0, min(10, cog_sorted.size()))
 
 func _set_error_summary():
-	var helper = load("res://src/error_summary.gd").new()
+	var helper = load("ADDON_SRC + "error_summary.gd").new()
 	var summary = helper.summarize(project_result.file_results, project_result.errors)
 	project_result.error_summary = summary.by_code
 	project_result.error_severity_summary = summary.by_severity
@@ -237,7 +239,7 @@ func is_analysis_running() -> bool:
 func _ensure_logger(config_data):
 	if logger != null:
 		return
-	logger = load("res://src/logger.gd").new()
+	logger = load("ADDON_SRC + "logger.gd").new()
 	if config_data != null and config_data.logging_config != null:
 		logger.configure(config_data.logging_config)
 
@@ -249,12 +251,12 @@ func _log_error(code: String, message: String):
 func _ensure_tools():
 	if _tools_ready:
 		return
-	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+	var tokenizer_script = "ADDON_SRC + "gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "ADDON_SRC + "tokenizer.gd"
 	_tokenizer_class = load(tokenizer_script)
-	_detector_instance = load("res://src/control_flow_detector.gd").new()
-	_function_detector_instance = load("res://src/function_detector.gd").new()
-	_class_detector_instance = load("res://src/class_detector.gd").new()
-	_cc_calc_instance = load("res://src/cc_calculator.gd").new()
-	_cog_calc_instance = load("res://src/cog_complexity_calculator.gd").new()
-	_confidence_calc_instance = load("res://src/confidence_calculator.gd").new()
+	_detector_instance = load("ADDON_SRC + "control_flow_detector.gd").new()
+	_function_detector_instance = load("ADDON_SRC + "function_detector.gd").new()
+	_class_detector_instance = load("ADDON_SRC + "class_detector.gd").new()
+	_cc_calc_instance = load("ADDON_SRC + "cc_calculator.gd").new()
+	_cog_calc_instance = load("ADDON_SRC + "cog_complexity_calculator.gd").new()
+	_confidence_calc_instance = load("ADDON_SRC + "confidence_calculator.gd").new()
 	_tools_ready = true
