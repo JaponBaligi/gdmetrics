@@ -2,6 +2,8 @@ extends Object
 # Batch analyzer
 # processes multiple files and aggregates results
 
+const ADDON_SRC := "res://addons/gdscript_complexity/src/"
+
 class FileResult:
 	var file_path: String = ""
 	var success: bool = false
@@ -53,7 +55,7 @@ var _time_helper_path: String = ""
 func analyze_project(root_path: String, config, adapter = null):
 	project_result = ProjectResult.new()
 	version_adapter = adapter
-	_error_codes = load("res://src/error_codes.gd").new()
+	_error_codes = load(ADDON_SRC + "error_codes.gd").new()
 	_ensure_logger(config)
 	project_result.performance = {}
 	var profiling = false
@@ -64,11 +66,11 @@ func analyze_project(root_path: String, config, adapter = null):
 	# Initialize cache manager if caching is enabled
 	if config.performance_config.get("enable_caching", false):
 		var cache_path = config.performance_config.get("cache_path", ".gdcomplexity_cache")
-		cache_manager = load("res://src/cache_manager.gd").new(cache_path, true)
+		cache_manager = load(ADDON_SRC + "cache_manager.gd").new(cache_path, true)
 	else:
 		cache_manager = null
 	
-	var discovery_script = "res://src/gd3/file_discovery.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/gd4/file_discovery.gd"
+	var discovery_script = (ADDON_SRC + "gd3/file_discovery.gd") if Engine.get_version_info().get("major", 0) == 3 else (ADDON_SRC + "gd4/file_discovery.gd")
 	var discovery = load(discovery_script).new()
 	var files = discovery.find_files(root_path, config.include_patterns, config.exclude_patterns)
 	
@@ -126,18 +128,18 @@ func analyze_project(root_path: String, config, adapter = null):
 func _get_tokenizer_script() -> String:
 	var version_info = Engine.get_version_info()
 	var is_godot_3 = version_info.get("major", 0) == 3
-	return "res://src/gd3/tokenizer.gd" if is_godot_3 else "res://src/tokenizer.gd"
+	return (ADDON_SRC + "gd3/tokenizer.gd") if is_godot_3 else (ADDON_SRC + "tokenizer.gd")
 
 func _ensure_tools():
 	if _tools_ready:
 		return
 	_tokenizer_class = load(_get_tokenizer_script())
-	_detector_instance = load("res://src/control_flow_detector.gd").new()
-	_function_detector_instance = load("res://src/function_detector.gd").new()
-	_class_detector_instance = load("res://src/class_detector.gd").new()
-	_cc_calc_instance = load("res://src/cc_calculator.gd").new()
-	_cog_calc_instance = load("res://src/cog_complexity_calculator.gd").new()
-	_confidence_calc_instance = load("res://src/confidence_calculator.gd").new()
+	_detector_instance = load(ADDON_SRC + "control_flow_detector.gd").new()
+	_function_detector_instance = load(ADDON_SRC + "function_detector.gd").new()
+	_class_detector_instance = load(ADDON_SRC + "class_detector.gd").new()
+	_cc_calc_instance = load(ADDON_SRC + "cc_calculator.gd").new()
+	_cog_calc_instance = load(ADDON_SRC + "cog_complexity_calculator.gd").new()
+	_confidence_calc_instance = load(ADDON_SRC + "confidence_calculator.gd").new()
 	_tools_ready = true
 
 func _analyze_file(file_path: String, config, profiling: bool = false):
@@ -280,7 +282,7 @@ func _now_msec() -> int:
 func _ensure_time_helper():
 	if _time_helper != null:
 		return _time_helper
-	_time_helper_path = "res://src/gd3/time_helper.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/gd4/time_helper.gd"
+	_time_helper_path = (ADDON_SRC + "gd3/time_helper.gd") if Engine.get_version_info().get("major", 0) == 3 else (ADDON_SRC + "gd4/time_helper.gd")
 	var helper_resource = load(_time_helper_path)
 	if helper_resource == null:
 		return null
@@ -345,7 +347,7 @@ func get_project_result():
 func _ensure_logger(config):
 	if logger != null:
 		return
-	logger = load("res://src/logger.gd").new()
+	logger = load(ADDON_SRC + "logger.gd").new()
 	if config != null and config.logging_config != null:
 		logger.configure(config.logging_config)
 
@@ -355,7 +357,7 @@ func _log_error(code: String, message: String):
 	logger.log_with_code("error", code, message)
 
 func _set_error_summary(file_results: Array):
-	var helper = load("res://src/error_summary.gd").new()
+	var helper = load(ADDON_SRC + "error_summary.gd").new()
 	var summary = helper.summarize(file_results, project_result.errors)
 	project_result.error_summary = summary.by_code
 	project_result.error_severity_summary = summary.by_severity

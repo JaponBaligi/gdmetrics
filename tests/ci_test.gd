@@ -6,7 +6,7 @@ extends SceneTree
 var FORBIDDEN_OUTPUT_PATHS = [
 	"project.godot",
 	".git",
-	"src/",
+	"addons/gdscript_complexity/",
 	"cli/",
 	"docs/",
 	".github/"
@@ -83,7 +83,7 @@ func run_analysis(project_path: String, output_path: String, csv_output_path: St
 	var version_adapter = load("res://addons/gdscript_complexity/version_adapter.gd").new()
 	print("Godot version: %s" % version_adapter.get_version_string())
 	
-	var config = load("res://src/config_manager.gd").new()
+	var config = load("res://addons/gdscript_complexity/src/config_manager.gd").new()
 	var config_path = "res://complexity_config.json"
 	if not config.load_config(config_path):
 		if config.has_errors():
@@ -91,7 +91,7 @@ func run_analysis(project_path: String, output_path: String, csv_output_path: St
 				print("Config warning: %s" % error)
 	var default_config = config.get_config()
 	
-	var batch_analyzer = load("res://src/batch_analyzer.gd").new()
+	var batch_analyzer = load("res://addons/gdscript_complexity/src/batch_analyzer.gd").new()
 	var project_result = batch_analyzer.analyze_project(project_path, default_config, version_adapter)
 	
 	if project_result.total_files == 0:
@@ -106,7 +106,7 @@ func run_analysis(project_path: String, output_path: String, csv_output_path: St
 		print("ERROR: No files successfully analyzed")
 		return 1
 	
-	var report_gen_script = "res://src/gd3/report_generator.gd" if version_adapter.is_godot_3 else "res://src/gd4/report_generator.gd"
+	var report_gen_script = "res://addons/gdscript_complexity/src/gd3/report_generator.gd" if version_adapter.is_godot_3 else "res://addons/gdscript_complexity/src/gd4/report_generator.gd"
 	var report_gen = load(report_gen_script).new()
 	var report = report_gen.generate_report(project_result, default_config)
 	

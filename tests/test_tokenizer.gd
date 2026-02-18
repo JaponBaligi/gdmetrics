@@ -15,7 +15,7 @@ func _init():
 		print("Usage: godot --script test_tokenizer.gd -- <file.gd>")
 		return
 	
-	var tokenizer = preload("res://src/tokenizer.gd").new()
+	var tokenizer = preload("res://addons/gdscript_complexity/src/tokenizer.gd").new()
 	var tokens = tokenizer.tokenize_file(file_path)
 	var errors = tokenizer.get_errors()
 	
@@ -53,7 +53,7 @@ func _init():
 	print("")
 	
 	print("=== Cyclomatic Complexity ===")
-	var cc_calc = preload("res://src/cc_calculator.gd").new()
+	var cc_calc = preload("res://addons/gdscript_complexity/src/cc_calculator.gd").new()
 	var cc = cc_calc.calculate_cc(nodes)
 	var breakdown = cc_calc.get_breakdown()
 	print("CC = %d" % cc)
@@ -71,7 +71,7 @@ func _init():
 	
 	print("")
 	print("=== Function Detection ===")
-	var func_detector = preload("res://src/function_detector.gd").new()
+	var func_detector = preload("res://addons/gdscript_complexity/src/function_detector.gd").new()
 	var functions = func_detector.detect_functions(tokens)
 	print("Functions found: %d" % functions.size())
 	for func_info in functions:
@@ -82,7 +82,7 @@ func _init():
 	
 	print("")
 	print("=== Cognitive Complexity (C-COG) ===")
-	var cog_calc = preload("res://src/cog_complexity_calculator.gd").new()
+	var cog_calc = preload("res://addons/gdscript_complexity/src/cog_complexity_calculator.gd").new()
 	var cog_result = cog_calc.calculate_cog(nodes, functions)
 	print("Total C-COG = %d" % cog_result.total_cog)
 	print("Breakdown:")
@@ -102,7 +102,7 @@ func _init():
 	
 	print("")
 	print("=== Class Detection ===")
-	var class_detector = preload("res://src/class_detector.gd").new()
+	var class_detector = preload("res://addons/gdscript_complexity/src/class_detector.gd").new()
 	var classes = class_detector.detect_classes(tokens)
 	print("Classes found: %d" % classes.size())
 	for class_info in classes:
@@ -110,7 +110,7 @@ func _init():
 	
 	print("")
 	print("=== Confidence Score ===")
-	var confidence_calc = preload("res://src/confidence_calculator.gd").new()
+	var confidence_calc = preload("res://addons/gdscript_complexity/src/confidence_calculator.gd").new()
 	var confidence_result = confidence_calc.calculate_confidence(tokens, errors, "4.0")
 	print("Confidence Score: %.2f" % confidence_result.score)
 	print("Components:")

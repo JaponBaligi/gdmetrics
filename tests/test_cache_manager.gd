@@ -14,7 +14,7 @@ func _initialize():
 	
 	# Test 1: Cache manager initialization
 	print("\n[Test 1] Cache manager initialization...")
-	var cache_manager = load("res://src/cache_manager.gd").new(".test_cache", true)
+	var cache_manager = load("res://addons/gdscript_complexity/src/cache_manager.gd").new(".test_cache", true)
 	if cache_manager == null:
 		print("FAILED: Failed to create cache manager")
 		tests_failed += 1
@@ -24,7 +24,7 @@ func _initialize():
 	
 	# Test 2: File hash calculation
 	print("\n[Test 2] File hash calculation...")
-	var test_file = "res://src/config_manager.gd"
+	var test_file = "res://addons/gdscript_complexity/src/config_manager.gd"
 	var hash1 = cache_manager.calculate_file_hash(test_file)
 	var hash2 = cache_manager.calculate_file_hash(test_file)
 	if hash1 == "" or hash2 == "":
@@ -39,7 +39,7 @@ func _initialize():
 	
 	# Test 3: Config hash calculation
 	print("\n[Test 3] Config hash calculation...")
-	var config_manager = load("res://src/config_manager.gd").new()
+	var config_manager = load("res://addons/gdscript_complexity/src/config_manager.gd").new()
 	var config = config_manager.get_config()
 	var config_hash1 = cache_manager.calculate_config_hash(config)
 	var config_hash2 = cache_manager.calculate_config_hash(config)
@@ -55,7 +55,7 @@ func _initialize():
 	
 	# Test 4: Cache storage and retrieval
 	print("\n[Test 4] Cache storage and retrieval...")
-	var test_file_result = load("res://src/batch_analyzer.gd").FileResult.new()
+	var test_file_result = load("res://addons/gdscript_complexity/src/batch_analyzer.gd").FileResult.new()
 	test_file_result.file_path = test_file
 	test_file_result.success = true
 	test_file_result.cc = 5
@@ -105,7 +105,7 @@ func _initialize():
 			file = null
 	
 	# Store result for temp file
-	var temp_result = load("res://src/batch_analyzer.gd").FileResult.new()
+	var temp_result = load("res://addons/gdscript_complexity/src/batch_analyzer.gd").FileResult.new()
 	temp_result.file_path = temp_file
 	temp_result.success = true
 	temp_result.cc = 1

@@ -50,7 +50,7 @@ func _run():
 				metrics_output = args[i + 1]
 	
 	var version_adapter = load("res://addons/gdscript_complexity/version_adapter.gd").new()
-	var config_manager = load("res://src/config_manager.gd").new()
+	var config_manager = load("res://addons/gdscript_complexity/src/config_manager.gd").new()
 	var config = config_manager.get_config()
 	
 	var scores = _collect_scores(config, version_adapter)
@@ -85,16 +85,16 @@ func _run():
 func _collect_scores(config, version_adapter) -> Array:
 	var scores = []
 	var fixtures_path = "res://tests/fixtures"
-	var discovery_script = "res://src/gd3/file_discovery.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/gd4/file_discovery.gd"
+	var discovery_script = "res://addons/gdscript_complexity/src/gd3/file_discovery.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/gd4/file_discovery.gd"
 	var discovery = load(discovery_script).new()
 	var files = discovery.find_files(fixtures_path, ["res://**/*.gd"], [])
 	
-	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
-	var detector = load("res://src/control_flow_detector.gd").new()
-	var func_detector = load("res://src/function_detector.gd").new()
-	var cc_calc = load("res://src/cc_calculator.gd").new()
-	var cog_calc = load("res://src/cog_complexity_calculator.gd").new()
-	var confidence_calc = load("res://src/confidence_calculator.gd").new()
+	var tokenizer_script = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
+	var detector = load("res://addons/gdscript_complexity/src/control_flow_detector.gd").new()
+	var func_detector = load("res://addons/gdscript_complexity/src/function_detector.gd").new()
+	var cc_calc = load("res://addons/gdscript_complexity/src/cc_calculator.gd").new()
+	var cog_calc = load("res://addons/gdscript_complexity/src/cog_complexity_calculator.gd").new()
+	var confidence_calc = load("res://addons/gdscript_complexity/src/confidence_calculator.gd").new()
 	
 	for file_path in files:
 		var filename = file_path.get_file()

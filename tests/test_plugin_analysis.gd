@@ -26,7 +26,7 @@ func _init():
 	
 	# Test 2: Load config manager
 	print("\n[Test 2] Loading config manager...")
-	var config_manager_script = load("res://src/config_manager.gd")
+	var config_manager_script = load("res://addons/gdscript_complexity/src/config_manager.gd")
 	if config_manager_script == null:
 		print("ERROR: Failed to load config_manager script")
 		quit(1)
@@ -61,7 +61,7 @@ func _init():
 	
 	# Test 4: Load file discovery
 	print("\n[Test 4] Loading file discovery...")
-	var discovery_script = load("res://src/gd3/file_discovery.gd")
+	var discovery_script = load("res://addons/gdscript_complexity/src/gd3/file_discovery.gd")
 	if discovery_script == null:
 		print("ERROR: Failed to load file_discovery script")
 		quit(1)

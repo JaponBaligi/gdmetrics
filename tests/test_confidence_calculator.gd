@@ -10,16 +10,16 @@ var tests_passed = 0
 var tests_failed = 0
 
 func _init():
-	confidence_calculator = load("res://src/confidence_calculator.gd").new()
+	confidence_calculator = load("res://addons/gdscript_complexity/src/confidence_calculator.gd").new()
 	version_adapter = load("res://addons/gdscript_complexity/version_adapter.gd").new()
 	
 	var version_info = Engine.get_version_info()
 	var is_godot_3 = version_info.get("major", 0) == 3
 	
 	if is_godot_3:
-		tokenizer = load("res://src/gd3/tokenizer.gd").new()
+		tokenizer = load("res://addons/gdscript_complexity/src/gd3/tokenizer.gd").new()
 	else:
-		tokenizer = load("res://src/tokenizer.gd").new()
+		tokenizer = load("res://addons/gdscript_complexity/src/tokenizer.gd").new()
 	
 	run_all_tests()
 	quit(tests_failed)
