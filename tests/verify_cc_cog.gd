@@ -3,6 +3,9 @@
 
 extends SceneTree
 
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
+
 var batch_analyzer = null
 var config_manager = null
 var version_adapter = null
@@ -27,9 +30,17 @@ var expected_values = {
 }
 
 func _init():
-	batch_analyzer = load("res://src/batch_analyzer.gd").new()
-	config_manager = load("res://src/config_manager.gd").new()
-	version_adapter = load("res://addons/gdscript_complexity/version_adapter.gd").new()
+	var batch_analyzer_script = load(SRC_ROOT + "/batch_analyzer.gd")
+	assert(batch_analyzer_script != null, "Failed to load batch_analyzer.gd")
+	batch_analyzer = batch_analyzer_script.new()
+	
+	var config_manager_script = load(SRC_ROOT + "/config_manager.gd")
+	assert(config_manager_script != null, "Failed to load config_manager.gd")
+	config_manager = config_manager_script.new()
+	
+	var version_adapter_script = load(ADDON_ROOT + "/version_adapter.gd")
+	assert(version_adapter_script != null, "Failed to load version_adapter.gd")
+	version_adapter = version_adapter_script.new()
 	
 	run_verification()
 	quit(tests_failed)
