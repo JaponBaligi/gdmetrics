@@ -55,6 +55,7 @@ dist/
 .settings/
 *.sublime-project
 *.sublime-workspace
+src\godot_cc.code-workspace
 
 # Python
 **pycache**/

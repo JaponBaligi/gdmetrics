@@ -1,8 +1,24 @@
 # GDScript Complexity Analyzer
 
-***bad code, target PCs / optimized code, target electricity.***
+**gdmetrics is a static analyzer that measures code complexity and maintainability metrics for Godot (GDScript) projects.**
+
+> ***bad code, target PCs / optimized code, target electricity.***
 
 A Godot EditorPlugin that analyzes GDScript code complexity using Cyclomatic Complexity (CC) and Cognitive Complexity (C-COG) metrics.
+
+## Who Is This For?
+
+- **Godot developers** working on medium to large projects
+- **Developers preparing for refactoring** who need metrics to guide prioritization
+- **Anyone tracking CC / CCOG-style complexity metrics** as part of code quality standards
+- **CI/CD pipelines** that want to enforce complexity thresholds
+
+## Why Use This?
+
+- **Identify risky scripts** before refactoring (find high-complexity code early)
+- **Measure technical debt growth** over time with automated reports
+- **Use metrics as part of code review** to guide refactoring efforts
+- **Set complexity thresholds** to prevent complexity regression in your codebase
 
 ## Features
 
@@ -69,6 +85,53 @@ godot --script cli/ci_test.gd -- --project-path . --output report.json --csv-out
 ```
 
 The report will be written to `report.json`. On Godot 3.5, a fallback copy is also written to `user://ci_report_fallback.json` (see `OS.get_user_data_dir()` for location).
+
+## Example Output
+
+### Console Output
+
+When analysis completes, you'll see output like:
+
+```
+[GDScript Complexity Analyzer] Analysis completed
+Files analyzed: 42
+Total CC: 342 (avg: 8.14)
+Total C-COG: 725 (avg: 17.26)
+High complexity files: 3
+```
+
+### JSON Report Format
+
+```json
+{
+  "project": "my_project",
+  "engine_version": "4.2.1",
+  "timestamp": "2026-01-26T10:30:00Z",
+  "totals": {
+    "files_analyzed": 42,
+    "total_cc": 342,
+    "total_cog": 725,
+    "average_cc": 8.14,
+    "average_cog": 17.26
+  },
+  "files": [
+    {
+      "file": "res://player.gd",
+      "confidence": 0.93,
+      "file_cc": 16,
+      "file_cog": 24,
+      "functions": [
+        {
+          "name": "_process",
+          "line": 45,
+          "cc": 8,
+          "cog": 12
+        }
+      ]
+    }
+  ]
+}
+```
 
 ### Usage Examples
 
@@ -186,6 +249,27 @@ Set `"report.auto_export": true` to automatically write reports after analysis. 
 
 See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) for detailed compatibility information.
 
+## Godot 3.x vs 4.x: Key Differences
+
+### Godot 4.x (Supported via `godot4` branch)
+
+✅ **Full support**
+- All metrics available (CC, C-COG)
+- `match`/`case` statements supported
+- Annotation-based editor integration
+- Highest accuracy (90-93%)
+
+### Godot 3.x (Supported via `main` branch)
+
+⚠️ **Best-effort support**
+- All core metrics work (CC, C-COG)
+- No `match` statement support (language limitation)
+- Limited editor integration
+- Lower accuracy due to block-oriented parser (85-90%)
+- Confidence scores capped at 0.90 max
+
+**Recommendation**: For new projects, use Godot 4.x. For Godot 3.5 LTS projects, this tool provides useful metrics with reasonable accuracy.
+
 ## Complexity Metrics
 
 ### Cyclomatic Complexity (CC)
@@ -204,34 +288,6 @@ Formula: `C-COG = sum of (1 + nesting_depth) for each control structure`
 - Each control structure adds +1 base
 - Each nesting level adds +1 to the contribution
 - `case` statements add +1 regardless of nesting depth
-
-## Report Format
-
-Reports are generated in JSON format:
-
-```json
-{
-  "project": "my_project",
-  "engine_version": "4.2.1",
-  "timestamp": "2026-01-26T10:30:00Z",
-  "totals": {
-    "files_analyzed": 42,
-    "total_cc": 342,
-    "total_cog": 725,
-    "average_cc": 8.14,
-    "average_cog": 17.26
-  },
-  "files": [
-    {
-      "file": "res://player.gd",
-      "confidence": 0.93,
-      "file_cc": 16,
-      "file_cog": 24,
-      "functions": [...]
-    }
-  ]
-}
-```
 
 ## Testing
 
@@ -269,18 +325,63 @@ godot --headless --script tests/validate_confidence.gd -- --step 0.1 --apply
 
 ## Known Limitations
 
-- **Parser Accuracy**: Block-oriented parser, not full AST. Typical accuracy: 90-93% (Godot 4.x), 85-90% (Godot 3.x)
+This tool is a **static analyzer**, not a runtime profiler. Understand its limitations:
+
+### Technical Limitations
+
+- **Parser Accuracy**: Block-oriented parser, not full AST
+  - Godot 4.x: 90-93% accuracy
+  - Godot 3.x: 85-90% accuracy
+- **GDScript Only**: Does not analyze C#, C++, or other Godot languages
+- **Metrics are Heuristic-Based**: CC and C-COG are approximations based on control flow patterns, not execution traces
 - **Confidence Cap**: Godot 3.x confidence scores capped at 0.90 maximum
 - **Match Statements**: Not supported in Godot 3.x (language limitation)
 - **Expression Parsing**: Shallow parsing (by design, sufficient for complexity metrics)
+
+### Scope Limitations
+
+- Not a performance profiler (doesn't measure execution time or memory)
+- Not a linter (doesn't check code style or conventions)
+- Not a runtime debugger
+- Cannot detect all logic errors or anti-patterns
+- Metrics reflect code structure, not actual complexity of algorithms
+
+### Practical Limitations
+
+- Large files (10k+ lines) may have slower analysis
+- Cache requires disk space (.gdcomplexity_cache/)
+- CLI mode requires running Godot in headless mode
 
 ## Confidence Scores
 
 Confidence scores estimate parse reliability. Use `tests/validate_confidence.gd` to compute r² against fixtures and optionally write tuned weights to `complexity_config.json`. Default weights are tuned via this tool.
 
+## Roadmap
+
+### Current Release
+- ✅ CC and C-COG metrics
+- ✅ JSON and CSV export
+- ✅ Godot 3.x and 4.x support
+- ✅ Caching system
+- ✅ CLI integration
+
+### Planned Features
+- 🔲 HTML report generation with charts
+- 🔲 Real-time complexity warnings in editor
+- 🔲 GitHub Actions integration template
+- 🔲 Complexity trend tracking over time
+- 🔲 Custom metric plugins
+
+### Under Consideration
+- Halstead Metrics
+- Maintainability Index calculation
+- IDE integration for other engines (Godot 5.x when stable)
+
 ## License
 
-See [LICENSE](LICENSE) file for details.
+Licensed under the **MIT License**. See [LICENSE](LICENSE) file for full details.
+
+Permission is granted to use, copy, modify, and distribute this software in accordance with the MIT License.
 
 ## Documentation
 
