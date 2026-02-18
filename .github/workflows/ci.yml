@@ -2,39 +2,25 @@ name: CI & Release
 
 on:
   push:
-    branches: [main, godot4]
+    branches: [godot4]
     tags:
       - "v*"
   pull_request:
-    branches: [main, godot4]
+    branches: [godot4]
   workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - branch: main
-            godot: "3.5.3"
-          - branch: godot4
-            godot: "4.2.0"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Skip unrelated branch
-        if: github.ref_type == 'branch' && github.ref_name != matrix.branch
-        run: |
-          echo "Skipping job for unrelated branch"
-          exit 0
-
-      - name: Setup Godot
+      - name: Setup Godot (4.x)
         uses: chickensoft-games/setup-godot@v1
         with:
-          version: ${{ matrix.godot }}
+          version: "4.2.0"
           include-templates: false
           use-dotnet: false
 
@@ -58,7 +44,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ci-${{ matrix.branch }}
+          name: ci-godot4
           path: |
             ci_report.json
             ci_report.csv
