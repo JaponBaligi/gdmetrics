@@ -1,5 +1,9 @@
 @tool
 extends AcceptDialog
+
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
+
 signal config_saved
 
 var config_manager = null  # ConfigManager - loaded dynamically
@@ -275,7 +279,7 @@ func _on_reset_pressed():
 		return
 	
 	# Load ConfigManager dynamically to avoid parse-time cascade
-	var config_manager_script = load("res://src/config_manager.gd")
+	var config_manager_script = load(SRC_ROOT + "/config_manager.gd")
 	if config_manager_script != null:
 		config_manager = config_manager_script.new()
 		_load_config()

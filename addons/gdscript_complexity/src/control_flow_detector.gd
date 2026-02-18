@@ -5,6 +5,9 @@ class_name ControlFlowDetector
 # Detects: if, elif, for, while, match/case, and logical operators
 # Tracks indentation-based nesting depth for C-COG calculations
 
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
+
 class ControlFlowNode:
 	var type: String
 	var line: int
@@ -38,7 +41,7 @@ func detect_control_flow(tokens: Array, adapter = null) -> Array:
 	if tokens.size() == 0:
 		return []
 	
-	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load((SRC_ROOT + "/gd3/tokenizer.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/tokenizer.gd")).TokenType
 	
 	var supports_match = true
 	if version_adapter != null:
@@ -173,7 +176,7 @@ func _get_line_indent(tokens: Array, token_index: int) -> int:
 	if token_index <= 0:
 		return 0
 	
-	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load((SRC_ROOT + "/gd3/tokenizer.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/tokenizer.gd")).TokenType
 	var target_line = tokens[token_index].line
 	var i = token_index - 1
 	
@@ -231,7 +234,7 @@ func _is_match_active(stack: Array) -> bool:
 	return false
 
 func _parse_case_details(tokens: Array, start_index: int) -> Dictionary:
-	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load((SRC_ROOT + "/gd3/tokenizer.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/tokenizer.gd")).TokenType
 	var pattern_count = 1
 	var has_guard = false
 	var guard_mode = false
@@ -264,7 +267,7 @@ func _parse_case_details(tokens: Array, start_index: int) -> Dictionary:
 	}
 
 func _is_anonymous_func(tokens: Array, func_index: int) -> bool:
-	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load((SRC_ROOT + "/gd3/tokenizer.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/tokenizer.gd")).TokenType
 	var i = func_index + 1
 	while i < tokens.size():
 		var token = tokens[i]

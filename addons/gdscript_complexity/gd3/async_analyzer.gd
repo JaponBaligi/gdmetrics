@@ -2,6 +2,9 @@ tool
 extends Reference
 class_name AsyncAnalyzer
 
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
+
 # Processes files in batches without blocking UI (Godot 3.x version)
 
 signal progress_updated(current, total, file_path)
@@ -48,11 +51,11 @@ func start_analysis(root_path: String, config_data, adapter = null, plugin: Node
 	config = config_data
 	version_adapter = adapter
 	plugin_node = plugin  # Store plugin reference for deferred calls
-	_error_codes = load("res://src/error_codes.gd").new()
+	_error_codes = load(SRC_ROOT + "/error_codes.gd").new()
 	_ensure_logger(config)
 	
 	print("[AsyncAnalyzer] Loading batch_analyzer...")
-	batch_analyzer = preload("res://src/batch_analyzer.gd").new()
+	batch_analyzer = preload(SRC_ROOT + "/batch_analyzer.gd").new()
 	if batch_analyzer == null:
 		push_error("[AsyncAnalyzer] Failed to create batch_analyzer!")
 		is_running = false
@@ -61,7 +64,7 @@ func start_analysis(root_path: String, config_data, adapter = null, plugin: Node
 	batch_analyzer.logger = logger
 	
 	print("[AsyncAnalyzer] Loading file discovery...")
-	var discovery_script = "res://src/gd3/file_discovery.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/gd4/file_discovery.gd"
+	var discovery_script = (SRC_ROOT + "/gd3/file_discovery.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/gd4/file_discovery.gd")
 	var discovery_resource = load(discovery_script)
 	if discovery_resource == null:
 		push_error("[AsyncAnalyzer] Failed to load discovery script: %s" % discovery_script)
@@ -87,7 +90,7 @@ func start_analysis(root_path: String, config_data, adapter = null, plugin: Node
 	batch_size = 1
 	
 	print("[AsyncAnalyzer] Creating project_result...")
-	project_result = load("res://src/batch_analyzer.gd").ProjectResult.new()
+	project_result = load(SRC_ROOT + "/batch_analyzer.gd").ProjectResult.new()
 	if project_result == null:
 		push_error("[AsyncAnalyzer] Failed to create project_result!")
 		is_running = false
@@ -134,7 +137,7 @@ func _process_next_batch():
 	if file_result == null:
 		print("[AsyncAnalyzer] ERROR: File analysis returned null for: %s" % file_path)
 		# Create error result if analysis failed
-		file_result = load("res://src/batch_analyzer.gd").FileResult.new()
+		file_result = load(SRC_ROOT + "/batch_analyzer.gd").FileResult.new()
 		file_result.file_path = file_path
 		file_result.errors.append(_error_codes.format("ANALYSIS_FAILED", "Analysis failed: unexpected error"))
 		file_result.success = false
@@ -170,7 +173,7 @@ func _analyze_file_safe(file_path: String):
 	return result
 
 func _analyze_file(file_path: String):
-	var result = load("res://src/batch_analyzer.gd").FileResult.new()
+	var result = load(SRC_ROOT + "/batch_analyzer.gd").FileResult.new()
 	result.file_path = file_path
 	
 	# Check if file exists before processing
@@ -315,7 +318,7 @@ func _calculate_worst_offenders():
 	project_result.worst_cog_files = cog_sorted.slice(0, min(10, cog_sorted.size()))
 
 func _set_error_summary():
-	var helper = load("res://src/error_summary.gd").new()
+	var helper = load(SRC_ROOT + "/error_summary.gd").new()
 	var summary = helper.summarize(project_result.file_results, project_result.errors)
 	project_result.error_summary = summary.by_code
 	project_result.error_severity_summary = summary.by_severity
@@ -362,7 +365,7 @@ func is_analysis_running() -> bool:
 func _ensure_logger(config_data):
 	if logger != null:
 		return
-	logger = load("res://src/logger.gd").new()
+	logger = load(SRC_ROOT + "/logger.gd").new()
 	if config_data != null and config_data.logging_config != null:
 		logger.configure(config_data.logging_config)
 
@@ -376,10 +379,10 @@ func _ensure_tools():
 		return
 	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
 	_tokenizer_class = load(tokenizer_script)
-	_detector_instance = load("res://src/control_flow_detector.gd").new()
-	_function_detector_instance = load("res://src/function_detector.gd").new()
-	_class_detector_instance = load("res://src/class_detector.gd").new()
-	_cc_calc_instance = load("res://src/cc_calculator.gd").new()
-	_cog_calc_instance = load("res://src/cog_complexity_calculator.gd").new()
-	_confidence_calc_instance = load("res://src/confidence_calculator.gd").new()
+	_detector_instance = load(SRC_ROOT + "/control_flow_detector.gd").new()
+	_function_detector_instance = load(SRC_ROOT + "/function_detector.gd").new()
+	_class_detector_instance = load(SRC_ROOT + "/class_detector.gd").new()
+\t_cc_calc_instance = load(SRC_ROOT + "/cc_calculator.gd").new()
+\t_cog_calc_instance = load(SRC_ROOT + "/cog_complexity_calculator.gd").new()
+\t_confidence_calc_instance = load(SRC_ROOT + "/confidence_calculator.gd").new()
 	_tools_ready = true

@@ -5,6 +5,9 @@ class_name ConfidenceCalculator
 # calculates parse confidence based on token coverage, indentation consistency,
 # block balance, and parse errors
 
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
+
 class ConfidenceResult:
 	var score: float = 0.0
 	var components: Dictionary = {}
@@ -36,7 +39,7 @@ func calculate_confidence(tokens: Array, errors: Array, version_adapter = null, 
 		result.score = 0.0
 		return result
 	
-	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load((SRC_ROOT + "/gd3/tokenizer.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/tokenizer.gd")).TokenType
 	
 	var token_coverage = _calculate_token_coverage(tokens)
 	var indentation_consistency = _calculate_indentation_consistency(tokens)
@@ -92,7 +95,7 @@ func _calculate_token_coverage(tokens: Array) -> float:
 	if tokens.size() == 0:
 		return 0.0
 	
-	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load((SRC_ROOT + "/gd3/tokenizer.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/tokenizer.gd")).TokenType
 	
 	var total_chars = 0
 	var recognized_chars = 0
@@ -113,7 +116,7 @@ func _calculate_indentation_consistency(tokens: Array) -> float:
 	if tokens.size() == 0:
 		return 1.0
 	
-	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load((SRC_ROOT + "/gd3/tokenizer.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/tokenizer.gd")).TokenType
 	
 	var indent_levels: Array = []
 	var has_tabs = false
@@ -172,7 +175,7 @@ func _calculate_block_balance(tokens: Array) -> float:
 	if tokens.size() == 0:
 		return 1.0
 	
-	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load((SRC_ROOT + "/gd3/tokenizer.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/tokenizer.gd")).TokenType
 	
 	var paren_depth = 0
 	var bracket_depth = 0

@@ -4,6 +4,9 @@ class_name CacheManager
 # Content-based incremental analysis cache
 # Works with both Godot 3.x and 4.x
 
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
+
 class CacheEntry:
 	var file_path: String = ""
 	var file_hash: String = ""
@@ -38,9 +41,9 @@ func _init(cache_directory: String = "", enable: bool = true):
 	_is_godot_3 = version_info.get("major", 0) == 3
 	
 	if _is_godot_3:
-		_file_helper = load("res://src/gd3/file_helper.gd").new()
+		_file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
 	else:
-		_file_helper = load("res://src/gd4/file_helper.gd").new()
+		_file_helper = load(SRC_ROOT + "/gd4/file_helper.gd").new()
 	
 	if cache_directory == "":
 		cache_directory = ".gdcomplexity_cache"
@@ -243,7 +246,7 @@ func _file_result_to_dict(file_result) -> Dictionary:
 
 # Convert dictionary back to FileResult
 func _dict_to_file_result(data: Dictionary):
-	var result = load("res://src/batch_analyzer.gd").FileResult.new()
+	var result = load(SRC_ROOT + "/batch_analyzer.gd").FileResult.new()
 	result.file_path = data.get("file_path", "")
 	result.success = data.get("success", false)
 	result.cc = data.get("cc", 0)

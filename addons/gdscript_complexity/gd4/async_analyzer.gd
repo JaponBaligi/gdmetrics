@@ -2,7 +2,8 @@
 extends RefCounted
 # Processes files in batches without blocking UI
 
-const ADDON_SRC := "res://addons/gdscript_complexity/src/"
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
 
 signal progress_updated(current: int, total: int, file_path: String)
 signal file_analyzed(file_result)  # BatchAnalyzer.FileResult - loaded dynamically
@@ -41,13 +42,13 @@ func start_analysis(root_path: String, config_data, adapter = null):  # ConfigMa
 	
 	config = config_data
 	version_adapter = adapter
-	_error_codes = load(ADDON_SRC + "error_codes.gd").new()
+	_error_codes = load(SRC_ROOT + "/error_codes.gd").new()
 	_ensure_logger(config)
-	batch_analyzer = load(ADDON_SRC + "batch_analyzer.gd").new()
+	batch_analyzer = load(SRC_ROOT + "/batch_analyzer.gd").new()
 	batch_analyzer.version_adapter = version_adapter
 	batch_analyzer.logger = logger
 	
-	var discovery_script = (ADDON_SRC + "gd3/file_discovery.gd") if Engine.get_version_info().get("major", 0) == 3 else (ADDON_SRC + "gd4/file_discovery.gd")
+	var discovery_script = (SRC_ROOT + "/gd3/file_discovery.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/gd4/file_discovery.gd")
 	var discovery = load(discovery_script).new()
 	files = discovery.find_files(root_path, config.include_patterns, config.exclude_patterns)
 	

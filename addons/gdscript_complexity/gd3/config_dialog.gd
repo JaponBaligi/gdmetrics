@@ -2,6 +2,9 @@ tool
 extends AcceptDialog
 class_name ConfigDialog
 
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
+
 # Configuration dialog (Godot 3.x version)
 
 signal config_saved
@@ -303,7 +306,7 @@ func _on_reset_pressed():
 	if config_manager == null:
 		return
 	
-	config_manager = load("res://src/config_manager.gd").new()
+	config_manager = load(SRC_ROOT + "/config_manager.gd").new()
 	_load_config()
 
 func _on_ok_pressed():
