@@ -1,6 +1,9 @@
 @tool
 extends EditorPlugin
 
+const ADDON_ROOT := "res://addons/gdscript_complexity/"
+const ADDON_SRC := ADDON_ROOT + "src/"
+
 var dock_panel: Control = null
 var config_manager = null  # ConfigManager - loaded dynamically
 var async_analyzer = null  # AsyncAnalyzer - loaded dynamically based on version
@@ -13,7 +16,7 @@ var last_project_result = null
 var logger = null
 
 func _enter_tree():
-	logger = load("res://src/logger.gd").new()
+	logger = load(ADDON_SRC + "logger.gd").new()
 	logger.log_message("info", "Plugin entering tree")
 	
 	godot_version = Engine.get_version_info()
@@ -32,7 +35,7 @@ func _enter_tree():
 	if godot_version["major"] < 4:
 		logger.log_message("info", "Running in Godot 3.x mode (best-effort support)")
 	
-	config_manager = load("res://src/config_manager.gd").new()
+	config_manager = load(ADDON_SRC + "config_manager.gd").new()
 	
 	var config_path = "res://complexity_config.json"
 	if not config_manager.load_config(config_path):
@@ -167,22 +170,22 @@ func _exit_tree():
 
 func _unload_script_cache():
 	var paths = [
-		"res://src/batch_analyzer.gd",
-		"res://src/control_flow_detector.gd",
-		"res://src/function_detector.gd",
-		"res://src/class_detector.gd",
-		"res://src/cc_calculator.gd",
-		"res://src/cog_complexity_calculator.gd",
-		"res://src/confidence_calculator.gd",
-		"res://src/config_manager.gd",
-		"res://src/cache_manager.gd",
-		"res://src/logger.gd",
-		"res://src/error_codes.gd",
-		"res://src/error_summary.gd",
-		"res://src/gd3/file_helper.gd",
-		"res://src/gd4/file_helper.gd",
-		"res://src/gd3/time_helper.gd",
-		"res://src/gd4/time_helper.gd",
+		ADDON_SRC + "batch_analyzer.gd",
+		ADDON_SRC + "control_flow_detector.gd",
+		ADDON_SRC + "function_detector.gd",
+		ADDON_SRC + "class_detector.gd",
+		ADDON_SRC + "cc_calculator.gd",
+		ADDON_SRC + "cog_complexity_calculator.gd",
+		ADDON_SRC + "confidence_calculator.gd",
+		ADDON_SRC + "config_manager.gd",
+		ADDON_SRC + "cache_manager.gd",
+		ADDON_SRC + "logger.gd",
+		ADDON_SRC + "error_codes.gd",
+		ADDON_SRC + "error_summary.gd",
+		ADDON_SRC + "gd3/file_helper.gd",
+		ADDON_SRC + "gd4/file_helper.gd",
+		ADDON_SRC + "gd3/time_helper.gd",
+		ADDON_SRC + "gd4/time_helper.gd",
 		"res://addons/gdscript_complexity/version_adapter.gd",
 		"res://addons/gdscript_complexity/gd3/async_analyzer.gd",
 		"res://addons/gdscript_complexity/gd4/async_analyzer.gd",
@@ -392,7 +395,7 @@ func _on_export_requested(format: String):
 			dock_panel.set_status("No analysis results to export")
 		return
 	
-	var report_gen_script = "res://src/gd3/report_generator.gd" if version_adapter.is_godot_3 else "res://src/gd4/report_generator.gd"
+	var report_gen_script := ADDON_SRC + ("gd3/report_generator.gd" if version_adapter.is_godot_3 else "gd4/report_generator.gd")
 	var report_gen = load(report_gen_script).new()
 	var config = config_manager.get_config()
 	var ok = false
@@ -443,7 +446,7 @@ func _open_script_at_line(script_path: String, line: int):
 func _auto_export_reports(project_result):
 	if project_result == null or config_manager == null:
 		return
-	var report_gen_script = "res://src/gd3/report_generator.gd" if version_adapter.is_godot_3 else "res://src/gd4/report_generator.gd"
+	var report_gen_script := ADDON_SRC + ("gd3/report_generator.gd" if version_adapter.is_godot_3 else "gd4/report_generator.gd")
 	var report_gen = load(report_gen_script).new()
 	var config = config_manager.get_config()
 	var formats = config.report_config.get("formats", ["json"])
