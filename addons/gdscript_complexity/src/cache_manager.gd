@@ -33,7 +33,6 @@ class CacheEntry:
 var cache_path: String = ""
 var enabled: bool = false
 var _file_helper = null
-var _is_godot_3: bool = false
 
 func _init(cache_directory: String = "", enable: bool = true):
 	enabled = enable
@@ -49,14 +48,9 @@ func _ensure_cache_directory():
 	if not enabled:
 		return
 	
-	if _is_godot_3:
-		var dir = Directory.new()
-		if not dir.dir_exists(cache_path):
-			dir.make_dir_recursive(cache_path)
-	else:
-		# Godot 4.x: Use DirAccess static methods
-		if not DirAccess.dir_exists_absolute(cache_path):
-			DirAccess.make_dir_absolute(cache_path)
+	# Godot 4.x: Use DirAccess static methods
+	if not DirAccess.dir_exists_absolute(cache_path):
+		DirAccess.make_dir_absolute(cache_path)
 
 # Calculate content-based hash of file
 func calculate_file_hash(file_path: String) -> String:
@@ -86,15 +80,8 @@ func calculate_config_hash(config) -> String:
 	}
 	
 	# Convert to JSON string for hashing
-	var version_info = Engine.get_version_info()
-	var is_godot_3 = version_info.get("major", 0) == 3
-	
-	var json_string: String
-	if is_godot_3:
-		json_string = var2str(config_dict)  # Fallback for Godot 3
-	else:
-		var json = JSON.new()
-		json_string = json.stringify(config_dict)
+	var json = JSON.new()
+	var json_string: String = json.stringify(config_dict)
 	
 	return _hash_string(json_string)
 
@@ -102,11 +89,7 @@ func calculate_config_hash(config) -> String:
 func _hash_string(text: String) -> String:
 	var hash = 2166136261  # FNV offset basis (32-bit)
 	for i in range(text.length()):
-		var char_code: int
-		if _is_godot_3:
-			char_code = text.ord_at(i)
-		else:
-			char_code = text.unicode_at(i)
+		var char_code: int = text.unicode_at(i)
 		hash = hash ^ char_code
 		hash = hash * 16777619  # FNV prime (32-bit)
 		# Keep within 32-bit range
@@ -140,11 +123,7 @@ func get_cached_result(file_path: String, config) -> Dictionary:
 	
 	var config_hash = calculate_config_hash(config)
 	var cache_key = _get_cache_key(file_path)
-	var cache_file_path: String
-	if _is_godot_3:
-		cache_file_path = cache_path.plus_file(cache_key)
-	else:
-		cache_file_path = cache_path.path_join(cache_key)
+	var cache_file_path: String = cache_path.path_join(cache_key)
 	
 	if not _file_helper.file_exists(cache_file_path):
 		return {}
@@ -158,20 +137,10 @@ func get_cached_result(file_path: String, config) -> Dictionary:
 	_file_helper.close_file(f)
 	
 	# Parse JSON
-	var version_info = Engine.get_version_info()
-	var is_godot_3 = version_info.get("major", 0) == 3
-	var data: Dictionary
-	
-	if is_godot_3:
-		var parse_result = JSON.parse(json_text)
-		if parse_result.error != OK:
-			return {}
-		data = parse_result.result
-	else:
-		var json = JSON.new()
-		if json.parse(json_text) != OK:
-			return {}
-		data = json.get_data()
+	var json = JSON.new()
+	if json.parse(json_text) != OK:
+		return {}
+	var data: Dictionary = json.get_data()
 	
 	if not data is Dictionary:
 		return {}
@@ -205,11 +174,7 @@ func store_result(file_path: String, config, file_result) -> bool:
 	
 	var config_hash = calculate_config_hash(config)
 	var cache_key = _get_cache_key(file_path)
-	var cache_file_path: String
-	if _is_godot_3:
-		cache_file_path = cache_path.plus_file(cache_key)
-	else:
-		cache_file_path = cache_path.path_join(cache_key)
+	var cache_file_path: String = cache_path.path_join(cache_key)
 	
 	# Convert FileResult to dictionary
 	var result_data = _file_result_to_dict(file_result)
@@ -220,39 +185,21 @@ func store_result(file_path: String, config, file_result) -> bool:
 	entry.config_hash = config_hash
 	# Use ticks for compatibility (milliseconds since engine start)
 	# For absolute time, we'd need OS.get_datetime() conversion, but ticks work for TTL
-	if _is_godot_3:
-		entry.timestamp = OS.get_ticks_msec()
-	else:
-		entry.timestamp = Time.get_ticks_msec()
+	entry.timestamp = Time.get_ticks_msec()
 	entry.result_data = result_data
 	
 	# Write cache entry
 	var entry_dict = entry.to_dict()
-	var version_info = Engine.get_version_info()
-	var is_godot_3 = version_info.get("major", 0) == 3
 	
-	var json_string: String
-	if is_godot_3:
-		json_string = var2str(entry_dict)  # Fallback for Godot 3
-	else:
-		var json = JSON.new()
-		json_string = json.stringify(entry_dict)
+	var json = JSON.new()
+	var json_string: String = json.stringify(entry_dict)
 	
 	# Write file
-	if _is_godot_3:
-		var file = File.new()
-		var err = file.open(cache_file_path, File.WRITE)
-		if err != OK:
-			return false
-		file.store_string(json_string)
-		file.close()
-	else:
-		# Godot 4.x
-		var file = FileAccess.open(cache_file_path, FileAccess.WRITE)
-		if file == null:
-			return false
-		file.store_string(json_string)
-		file = null
+	var file = FileAccess.open(cache_file_path, FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string(json_string)
+	file = null
 	
 	return true
 
@@ -302,33 +249,18 @@ func cleanup_orphaned_entries(valid_files: Array) -> int:
 	
 	# List all cache files
 	var cache_files = []
-	if _is_godot_3:
-		var dir = Directory.new()
-		if dir.open(cache_path) == OK:
-			dir.list_dir_begin()
-			var file_name = dir.get_next()
-			while file_name != "":
-				if file_name.ends_with(".cache"):
-					cache_files.append(file_name)
-				file_name = dir.get_next()
-			dir.list_dir_end()
-	else:
-		var dir = DirAccess.open(cache_path)
-		if dir != null:
-			dir.list_dir_begin()
-			var file_name = dir.get_next()
-			while file_name != "":
-				if file_name.ends_with(".cache"):
-					cache_files.append(file_name)
-				file_name = dir.get_next()
+	var dir = DirAccess.open(cache_path)
+	if dir != null:
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		while file_name != "":
+			if file_name.ends_with(".cache"):
+				cache_files.append(file_name)
+			file_name = dir.get_next()
 	
 	# Check each cache file
 	for cache_file in cache_files:
-		var cache_file_path: String
-		if _is_godot_3:
-			cache_file_path = cache_path.plus_file(cache_file)
-		else:
-			cache_file_path = cache_path.path_join(cache_file)
+		var cache_file_path: String = cache_path.path_join(cache_file)
 		
 		# Read cache entry to get file_path
 		var f = _file_helper.open_read(cache_file_path)
@@ -341,24 +273,12 @@ func cleanup_orphaned_entries(valid_files: Array) -> int:
 		var json_text = f.get_as_text()
 		_file_helper.close_file(f)
 		
-		var version_info = Engine.get_version_info()
-		var is_godot_3 = version_info.get("major", 0) == 3
-		var data: Dictionary
-		
-		if is_godot_3:
-			var parse_result = JSON.parse(json_text)
-			if parse_result.error != OK:
-				_remove_file(cache_file_path)
-				cleaned += 1
-				continue
-			data = parse_result.result
-		else:
-			var json = JSON.new()
-			if json.parse(json_text) != OK:
-				_remove_file(cache_file_path)
-				cleaned += 1
-				continue
-			data = json.get_data()
+		var json = JSON.new()
+		if json.parse(json_text) != OK:
+			_remove_file(cache_file_path)
+			cleaned += 1
+			continue
+		var data: Dictionary = json.get_data()
 		
 		var entry = CacheEntry.new()
 		entry.from_dict(data)
@@ -376,37 +296,22 @@ func cleanup_old_entries(max_age_msec: int = 604800000) -> int:  # Default: 7 da
 		return 0
 	
 	var cleaned = 0
-	var current_time = OS.get_ticks_msec()
+	var current_time = Time.get_ticks_msec()
 	
 	# List all cache files
 	var cache_files = []
-	if _is_godot_3:
-		var dir = Directory.new()
-		if dir.open(cache_path) == OK:
-			dir.list_dir_begin()
-			var file_name = dir.get_next()
-			while file_name != "":
-				if file_name.ends_with(".cache"):
-					cache_files.append(file_name)
-				file_name = dir.get_next()
-			dir.list_dir_end()
-	else:
-		var dir = DirAccess.open(cache_path)
-		if dir != null:
-			dir.list_dir_begin()
-			var file_name = dir.get_next()
-			while file_name != "":
-				if file_name.ends_with(".cache"):
-					cache_files.append(file_name)
-				file_name = dir.get_next()
+	var dir = DirAccess.open(cache_path)
+	if dir != null:
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		while file_name != "":
+			if file_name.ends_with(".cache"):
+				cache_files.append(file_name)
+			file_name = dir.get_next()
 	
 	# Check each cache file
 	for cache_file in cache_files:
-		var cache_file_path: String
-		if _is_godot_3:
-			cache_file_path = cache_path.plus_file(cache_file)
-		else:
-			cache_file_path = cache_path.path_join(cache_file)
+		var cache_file_path: String = cache_path.path_join(cache_file)
 		
 		# Read cache entry to get timestamp
 		var f = _file_helper.open_read(cache_file_path)
@@ -416,20 +321,10 @@ func cleanup_old_entries(max_age_msec: int = 604800000) -> int:  # Default: 7 da
 		var json_text = f.get_as_text()
 		_file_helper.close_file(f)
 		
-		var version_info = Engine.get_version_info()
-		var is_godot_3 = version_info.get("major", 0) == 3
-		var data: Dictionary
-		
-		if is_godot_3:
-			var parse_result = JSON.parse(json_text)
-			if parse_result.error != OK:
-				continue
-			data = parse_result.result
-		else:
-			var json = JSON.new()
-			if json.parse(json_text) != OK:
-				continue
-			data = json.get_data()
+		var json = JSON.new()
+		if json.parse(json_text) != OK:
+			continue
+		var data: Dictionary = json.get_data()
 		
 		var entry = CacheEntry.new()
 		entry.from_dict(data)
@@ -441,15 +336,11 @@ func cleanup_old_entries(max_age_msec: int = 604800000) -> int:  # Default: 7 da
 	
 	return cleaned
 
-# Helper to remove a file (version-agnostic)
+# Helper to remove a file
 func _remove_file(file_path: String):
-	if _is_godot_3:
-		var dir = Directory.new()
+	var dir = DirAccess.open(".")
+	if dir != null:
 		dir.remove(file_path)
-	else:
-		var dir = DirAccess.open(".")
-		if dir != null:
-			dir.remove(file_path)
 
 # Clear all cache entries
 func clear_cache() -> int:
@@ -459,32 +350,17 @@ func clear_cache() -> int:
 	var cleared = 0
 	var cache_files = []
 	
-	if _is_godot_3:
-		var dir = Directory.new()
-		if dir.open(cache_path) == OK:
-			dir.list_dir_begin()
-			var file_name = dir.get_next()
-			while file_name != "":
-				if file_name.ends_with(".cache"):
-					cache_files.append(file_name)
-				file_name = dir.get_next()
-			dir.list_dir_end()
-	else:
-		var dir = DirAccess.open(cache_path)
-		if dir != null:
-			dir.list_dir_begin()
-			var file_name = dir.get_next()
-			while file_name != "":
-				if file_name.ends_with(".cache"):
-					cache_files.append(file_name)
-				file_name = dir.get_next()
+	var dir = DirAccess.open(cache_path)
+	if dir != null:
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		while file_name != "":
+			if file_name.ends_with(".cache"):
+				cache_files.append(file_name)
+			file_name = dir.get_next()
 	
 	for cache_file in cache_files:
-		var cache_file_path: String
-		if _is_godot_3:
-			cache_file_path = cache_path.plus_file(cache_file)
-		else:
-			cache_file_path = cache_path.path_join(cache_file)
+		var cache_file_path: String = cache_path.path_join(cache_file)
 		_remove_file(cache_file_path)
 		cleared += 1
 	
