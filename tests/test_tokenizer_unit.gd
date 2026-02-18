@@ -12,9 +12,9 @@ func _init():
 	var is_godot_3 = version_info.get("major", 0) == 3
 	
 	if is_godot_3:
-		tokenizer = load("res://src/gd3/tokenizer.gd").new()
+		tokenizer = load("res://addons/gdscript_complexity/src/gd3/tokenizer.gd").new()
 	else:
-		tokenizer = load("res://src/tokenizer.gd").new()
+		tokenizer = load("res://addons/gdscript_complexity/src/tokenizer.gd").new()
 	
 	run_all_tests()
 	quit(tests_failed)

@@ -55,7 +55,7 @@ var _time_helper_path: String = ""
 func analyze_project(root_path: String, config, adapter = null):  # -> ProjectResult - nested class
 	project_result = ProjectResult.new()
 	version_adapter = adapter
-	_error_codes = load("res://src/error_codes.gd").new()
+	_error_codes = load(ADDON_SRC + "error_codes.gd").new()
 	_ensure_logger(config)
 	project_result.performance = {}
 	var profiling = false
@@ -66,11 +66,11 @@ func analyze_project(root_path: String, config, adapter = null):  # -> ProjectRe
 	# Initialize cache manager if caching is enabled
 	if config.performance_config.get("enable_caching", false):
 		var cache_path = config.performance_config.get("cache_path", ".gdcomplexity_cache")
-		cache_manager = load("res://src/cache_manager.gd").new(cache_path, true)
+		cache_manager = load(ADDON_SRC + "cache_manager.gd").new(cache_path, true)
 	else:
 		cache_manager = null
 	
-	var discovery_script = "res://src/gd3/file_discovery.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/gd4/file_discovery.gd"
+	var discovery_script = (ADDON_SRC + "gd3/file_discovery.gd") if Engine.get_version_info().get("major", 0) == 3 else (ADDON_SRC + "gd4/file_discovery.gd")
 	var discovery = load(discovery_script).new()
 	var files = discovery.find_files(root_path, config.include_patterns, config.exclude_patterns)
 	
@@ -128,7 +128,7 @@ func analyze_project(root_path: String, config, adapter = null):  # -> ProjectRe
 func _get_tokenizer_script() -> String:
 	var version_info = Engine.get_version_info()
 	var is_godot_3 = version_info.get("major", 0) == 3
-	return "res://src/gd3/tokenizer.gd" if is_godot_3 else "res://src/tokenizer.gd"
+	return (ADDON_SRC + "gd3/tokenizer.gd") if is_godot_3 else (ADDON_SRC + "tokenizer.gd")
 
 func _ensure_tools():
 	if _tools_ready:

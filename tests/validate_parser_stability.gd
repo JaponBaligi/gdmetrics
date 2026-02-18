@@ -170,10 +170,10 @@ func validate_parser_stability(project_path: String) -> int:
 		return 1
 
 func test_multi_file_analysis(project_path: String) -> bool:
-	var config = load("res://src/config_manager.gd").new()
+	var config = load("res://addons/gdscript_complexity/src/config_manager.gd").new()
 	var default_config = config.get_config()
 	
-	var batch_analyzer = load("res://src/batch_analyzer.gd").new()
+	var batch_analyzer = load("res://addons/gdscript_complexity/src/batch_analyzer.gd").new()
 	var project_result = batch_analyzer.analyze_project(project_path, default_config)
 	
 	result.stats["total_files"] = project_result.total_files
@@ -249,7 +249,7 @@ func test_stability() -> bool:
 		var temp_path = "user://temp_test_%d.gd" % test_cases.find(test_code)
 		
 		if _write_file(temp_path, test_code):
-			var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+			var tokenizer_script = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
 			var tokenizer = load(tokenizer_script).new()
 			var tokens = tokenizer.tokenize_file(temp_path)
 			var errors = tokenizer.get_errors()
@@ -302,14 +302,14 @@ func test_indentation_ambiguity() -> bool:
 		var temp_path = "user://temp_indent_%d.gd" % test_cases.find(test_case)
 		
 		if _write_file(temp_path, test_case["code"]):
-			var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+			var tokenizer_script = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
 			var tokenizer = load(tokenizer_script).new()
 			var tokens = tokenizer.tokenize_file(temp_path)
 			
-			var func_detector = load("res://src/function_detector.gd").new()
+			var func_detector = load("res://addons/gdscript_complexity/src/function_detector.gd").new()
 			var functions = func_detector.detect_functions(tokens)
 			
-			var class_detector = load("res://src/class_detector.gd").new()
+			var class_detector = load("res://addons/gdscript_complexity/src/class_detector.gd").new()
 			var classes = class_detector.detect_classes(tokens)
 			
 			if tokens.size() == 0:
@@ -330,10 +330,10 @@ func test_indentation_ambiguity() -> bool:
 	return true
 
 func test_json_output(project_path: String) -> bool:
-	var config = load("res://src/config_manager.gd").new()
+	var config = load("res://addons/gdscript_complexity/src/config_manager.gd").new()
 	var default_config = config.get_config()
 	
-	var batch_analyzer = load("res://src/batch_analyzer.gd").new()
+	var batch_analyzer = load("res://addons/gdscript_complexity/src/batch_analyzer.gd").new()
 	var project_result = batch_analyzer.analyze_project(project_path, default_config)
 	
 	if project_result.total_files == 0:
@@ -342,7 +342,7 @@ func test_json_output(project_path: String) -> bool:
 	
 	var version_info = Engine.get_version_info()
 	var is_godot_3 = version_info.get("major", 0) == 3
-	var report_path = "res://src/gd3/report_generator.gd" if is_godot_3 else "res://src/gd4/report_generator.gd"
+	var report_path = "res://addons/gdscript_complexity/src/gd3/report_generator.gd" if is_godot_3 else "res://addons/gdscript_complexity/src/gd4/report_generator.gd"
 	var report_gen = load(report_path).new()
 	var report = report_gen.generate_report(project_result, default_config)
 
@@ -409,7 +409,7 @@ func test_large_file_handling() -> bool:
 		return false
 	
 	var start_time = _get_ticks_msec()
-	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+	var tokenizer_script = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
 	var tokenizer = load(tokenizer_script).new()
 	var tokens = tokenizer.tokenize_file(temp_path)
 	var errors = tokenizer.get_errors()
@@ -449,7 +449,7 @@ func test_deeply_nested_code() -> bool:
 		return false
 	
 	var start_time = _get_ticks_msec()
-	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+	var tokenizer_script = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
 	var tokenizer = load(tokenizer_script).new()
 	var tokens = tokenizer.tokenize_file(temp_path)
 	var errors = tokenizer.get_errors()
@@ -551,7 +551,7 @@ func test_edge_cases() -> bool:
 		var temp_path = "user://temp_edge_%d.gd" % edge_cases.find(edge_case)
 		
 		if _write_file(temp_path, edge_case["code"]):
-			var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+			var tokenizer_script = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
 			var tokenizer = load(tokenizer_script).new()
 			var tokens = tokenizer.tokenize_file(temp_path)
 			var errors = tokenizer.get_errors()
@@ -599,7 +599,7 @@ func test_performance_benchmarks() -> bool:
 			continue
 		
 		var start_time = _get_ticks_msec()
-		var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+		var tokenizer_script = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
 		var tokenizer = load(tokenizer_script).new()
 		var tokens = tokenizer.tokenize_file(temp_path)
 		var end_time = _get_ticks_msec()

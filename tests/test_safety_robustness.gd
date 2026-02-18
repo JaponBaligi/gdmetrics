@@ -14,13 +14,13 @@ func _init():
 	var version_info = Engine.get_version_info()
 	var is_godot_3 = version_info.get("major", 0) == 3
 	if is_godot_3:
-		tokenizer = load("res://src/gd3/tokenizer.gd").new()
+		tokenizer = load("res://addons/gdscript_complexity/src/gd3/tokenizer.gd").new()
 		file_helper = load("res://tests/file_helper_3.gd").new()
 	else:
-		tokenizer = load("res://src/tokenizer.gd").new()
+		tokenizer = load("res://addons/gdscript_complexity/src/tokenizer.gd").new()
 		file_helper = load("res://tests/file_helper_4.gd").new()
-	control_flow_detector = load("res://src/control_flow_detector.gd").new()
-	cog_calculator = load("res://src/cog_complexity_calculator.gd").new()
+	control_flow_detector = load("res://addons/gdscript_complexity/src/control_flow_detector.gd").new()
+	cog_calculator = load("res://addons/gdscript_complexity/src/cog_complexity_calculator.gd").new()
 	
 	run_all_tests()
 	quit(tests_failed)
