@@ -77,34 +77,18 @@ var _error_codes = null
 func _init(config_file_path: String = ""):
 	config = Config.new()
 	_error_codes = load(SRC_ROOT + "/error_codes.gd").new()
-	var version_info = Engine.get_version_info()
-	_is_godot_3 = version_info.get("major", 0) == 3
-	# Load file helper dynamically - lazy load to avoid parse-time cascade
-	# In Godot 4.x, use native APIs directly to avoid loading gd3 files
-	if _is_godot_3:
-		# Only load gd3 file helper in Godot 3.x (lazy load)
-		# Don't load here to avoid parse-time cascade in 4.x
-		pass
-	else:
-		# Load gd4 file helper in Godot 4.x
-		var helper_script = load(SRC_ROOT + "/gd4/file_helper.gd")
-		if helper_script != null:
-			_file_helper = helper_script.new()
+	var _file_helper_script = load(SRC_ROOT + "/gd3/file_helper.gd")
+	if _file_helper_script != null:
+		_file_helper = _file_helper_script.new()
 	if config_file_path != "":
 		load_config(config_file_path)
 
 func _ensure_file_helper():
-	# Lazy load file helper to avoid parse-time cascade in Godot 3.x
 	if _file_helper != null:
 		return
-	if _is_godot_3:
-		var helper_script = load(SRC_ROOT + "/gd3/file_helper.gd")
-		if helper_script != null:
-			_file_helper = helper_script.new()
-	else:
-		var helper_script = load(SRC_ROOT + "/gd4/file_helper.gd")
-		if helper_script != null:
-			_file_helper = helper_script.new()
+	var helper_script = load(SRC_ROOT + "/gd3/file_helper.gd")
+	if helper_script != null:
+		_file_helper = helper_script.new()
 
 func load_config(config_file_path: String) -> bool:
 	errors.clear()

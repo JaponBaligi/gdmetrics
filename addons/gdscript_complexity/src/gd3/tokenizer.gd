@@ -16,7 +16,8 @@ func _init():
 	if is_godot_3:
 		file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
 	else:
-		file_helper = load(SRC_ROOT + "/gd4/file_helper.gd").new()
+		# Godot 4: Use gd3/file_helper.gd which is compatible with both versions
+		file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
 
 enum TokenType {
 	KEYWORD,
@@ -88,7 +89,8 @@ func tokenize_file(file_path: String) -> Array:
 		if is_godot_3:
 			file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
 		else:
-			file_helper = load(SRC_ROOT + "/gd4/file_helper.gd").new()
+			# Godot 4: Use gd3/file_helper.gd which is compatible with both versions
+			file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
 	
 	var file = file_helper.open_read(file_path)
 	if file == null:

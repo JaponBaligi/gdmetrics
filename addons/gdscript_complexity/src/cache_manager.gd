@@ -37,13 +37,7 @@ var _is_godot_3: bool = false
 
 func _init(cache_directory: String = "", enable: bool = true):
 	enabled = enable
-	var version_info = Engine.get_version_info()
-	_is_godot_3 = version_info.get("major", 0) == 3
-	
-	if _is_godot_3:
-		_file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
-	else:
-		_file_helper = load(SRC_ROOT + "/gd4/file_helper.gd").new()
+	_file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
 	
 	if cache_directory == "":
 		cache_directory = ".gdcomplexity_cache"
@@ -54,9 +48,15 @@ func _init(cache_directory: String = "", enable: bool = true):
 func _ensure_cache_directory():
 	if not enabled:
 		return
-	var dir = Directory.new()
-	if not dir.dir_exists(cache_path):
-		dir.make_dir_recursive(cache_path)
+	
+	if _is_godot_3:
+		var dir = Directory.new()
+		if not dir.dir_exists(cache_path):
+			dir.make_dir_recursive(cache_path)
+	else:
+		# Godot 4.x: Use DirAccess static methods
+		if not DirAccess.dir_exists_absolute(cache_path):
+			DirAccess.make_dir_absolute(cache_path)
 
 # Calculate content-based hash of file
 func calculate_file_hash(file_path: String) -> String:
@@ -87,7 +87,11 @@ func calculate_config_hash(config) -> String:
 	
 	# Convert to JSON string for hashing
 	var json_string: String
-	json_string = to_json(config_dict)
+	if _is_godot_3:
+		json_string = var2str(config_dict)
+	else:
+		var json = JSON.new()
+		json_string = json.stringify(config_dict)
 	
 	return _hash_string(json_string)
 
@@ -95,7 +99,11 @@ func calculate_config_hash(config) -> String:
 func _hash_string(text: String) -> String:
 	var hash_value = 2166136261  # FNV offset basis (32-bit)
 	for i in range(text.length()):
-		var char_code = text.ord_at(i)
+		var char_code: int
+		if _is_godot_3:
+			char_code = text.ord_at(i)
+		else:
+			char_code = text.unicode_at(i)
 		hash_value = hash_value ^ char_code
 		hash_value = hash_value * 16777619  # FNV prime (32-bit)
 		# Keep within 32-bit range
@@ -133,7 +141,7 @@ func get_cached_result(file_path: String, config) -> Dictionary:
 	if _is_godot_3:
 		cache_file_path = cache_path.plus_file(cache_key)
 	else:
-		cache_file_path = cache_path.plus_file(cache_key)
+		cache_file_path = cache_path.path_join(cache_key)
 	
 	if not _file_helper.file_exists(cache_file_path):
 		return {}
@@ -198,7 +206,7 @@ func store_result(file_path: String, config, file_result) -> bool:
 	if _is_godot_3:
 		cache_file_path = cache_path.plus_file(cache_key)
 	else:
-		cache_file_path = cache_path.plus_file(cache_key)
+		cache_file_path = cache_path.path_join(cache_key)
 	
 	# Convert FileResult to dictionary
 	var result_data = _file_result_to_dict(file_result)
@@ -209,21 +217,36 @@ func store_result(file_path: String, config, file_result) -> bool:
 	entry.config_hash = config_hash
 	# Use ticks for compatibility (milliseconds since engine start)
 	# For absolute time, we'd need OS.get_datetime() conversion, but ticks work for TTL
-	entry.timestamp = OS.get_ticks_msec()
+	if _is_godot_3:
+		entry.timestamp = OS.get_ticks_msec()
+	else:
+		entry.timestamp = Time.get_ticks_msec()
 	entry.result_data = result_data
 	
 	# Write cache entry
 	var entry_dict = entry.to_dict()
 	var json_string: String
-	json_string = to_json(entry_dict)
+	if _is_godot_3:
+		json_string = var2str(entry_dict)
+	else:
+		var json = JSON.new()
+		json_string = json.stringify(entry_dict)
 	
 	# Write file
-	var file = File.new()
-	var err = file.open(cache_file_path, File.WRITE)
-	if err != OK:
-		return false
-	file.store_string(json_string)
-	file.close()
+	if _is_godot_3:
+		var file = File.new()
+		var err = file.open(cache_file_path, File.WRITE)
+		if err != OK:
+			return false
+		file.store_string(json_string)
+		file.close()
+	else:
+		# Godot 4.x
+		var file = FileAccess.open(cache_file_path, FileAccess.WRITE)
+		if file == null:
+			return false
+		file.store_string(json_string)
+		# FileAccess auto-closes in Godot 4
 	
 	return true
 

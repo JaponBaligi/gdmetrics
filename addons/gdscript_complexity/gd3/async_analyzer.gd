@@ -64,7 +64,7 @@ func start_analysis(root_path: String, config_data, adapter = null, plugin: Node
 	batch_analyzer.logger = logger
 	
 	print("[AsyncAnalyzer] Loading file discovery...")
-	var discovery_script = (SRC_ROOT + "/gd3/file_discovery.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/gd4/file_discovery.gd")
+	var discovery_script = SRC_ROOT + "/gd3/file_discovery.gd"
 	var discovery_resource = load(discovery_script)
 	if discovery_resource == null:
 		push_error("[AsyncAnalyzer] Failed to load discovery script: %s" % discovery_script)
@@ -184,7 +184,7 @@ func _analyze_file(file_path: String):
 		return result
 	
 	# Add error handling to prevent crashes
-	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+	var tokenizer_script = SRC_ROOT + ("/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "/tokenizer.gd")
 	var tokenizer = null
 	var tokens = []
 	var tokenizer_errors = []
@@ -377,7 +377,7 @@ func _log_error(code: String, message: String):
 func _ensure_tools():
 	if _tools_ready:
 		return
-	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+	var tokenizer_script = SRC_ROOT + "/gd3/tokenizer.gd"
 	_tokenizer_class = load(tokenizer_script)
 	_detector_instance = load(SRC_ROOT + "/control_flow_detector.gd").new()
 	_function_detector_instance = load(SRC_ROOT + "/function_detector.gd").new()

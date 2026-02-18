@@ -1,9 +1,12 @@
 extends Object
 
-# Report generator for Godot 3.x (to_json, File)
+# Report generator for Godot 3.x & 4.x (to_json/JSON.stringify, File/FileAccess)
 
 const ADDON_ROOT := "res://addons/gdscript_complexity"
 const SRC_ROOT := ADDON_ROOT + "/src"
+
+func _get_is_godot_3() -> bool:
+	return Engine.get_version_info().get("major", 0) == 3
 
 var FORBIDDEN_OUTPUT_PATHS = [
 	"project.godot",
@@ -144,25 +147,49 @@ func write_report(report: Dictionary, output_path: String) -> bool:
 	output_path = _sanitize_path(output_path)
 	if not _check_output_overwrite(output_path):
 		return false
-	var json_string = to_json(report)
-	var file = File.new()
-	var err = file.open(output_path, File.WRITE)
-	if err != OK:
-		return false
-	file.store_string(json_string)
-	file.close()
+	
+	# Convert to JSON string
+	var json_string: String
+	if _get_is_godot_3():
+		json_string = var2str(report)  # Fallback for Godot 3
+	else:
+		var json = JSON.new()
+		json_string = json.stringify(report)
+	
+	# Write to file
+	if _get_is_godot_3():
+		var file = File.new()
+		var err = file.open(output_path, File.WRITE)
+		if err != OK:
+			return false
+		file.store_string(json_string)
+		file.close()
+	else:
+		var file = FileAccess.open(output_path, FileAccess.WRITE)
+		if file == null:
+			return false
+		file.store_string(json_string)
+	
 	return true
 
 func write_csv(csv_text: String, output_path: String) -> bool:
 	output_path = _sanitize_path(output_path)
 	if not _check_output_overwrite(output_path):
 		return false
-	var file = File.new()
-	var err = file.open(output_path, File.WRITE)
-	if err != OK:
-		return false
-	file.store_string(csv_text)
-	file.close()
+	
+	if _get_is_godot_3():
+		var file = File.new()
+		var err = file.open(output_path, File.WRITE)
+		if err != OK:
+			return false
+		file.store_string(csv_text)
+		file.close()
+	else:
+		var file = FileAccess.open(output_path, FileAccess.WRITE)
+		if file == null:
+			return false
+		file.store_string(csv_text)
+	
 	return true
 
 func _sanitize_path(path: String) -> String:

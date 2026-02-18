@@ -70,7 +70,7 @@ func analyze_project(root_path: String, config, adapter = null):  # -> ProjectRe
 	else:
 		cache_manager = null
 	
-	var discovery_script = (ADDON_SRC + "gd3/file_discovery.gd") if Engine.get_version_info().get("major", 0) == 3 else (ADDON_SRC + "gd4/file_discovery.gd")
+	var discovery_script = ADDON_SRC + "gd3/file_discovery.gd"  # Works for both Godot 3 & 4
 	var discovery = load(discovery_script).new()
 	var files = discovery.find_files(root_path, config.include_patterns, config.exclude_patterns)
 	

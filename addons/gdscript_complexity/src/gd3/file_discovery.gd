@@ -1,8 +1,11 @@
 extends Object
 
-# File discovery for Godot 3.x (Directory, plus_file)
+# File discovery for Godot 3.x & 4.x (Directory/DirAccess, plus_file/path_join)
 
 const MAX_DEPTH = 50  # Prevent infinite recursion
+
+func _get_is_godot_3() -> bool:
+	return Engine.get_version_info().get("major", 0) == 3
 
 func find_files(root_path: String, include_patterns: Array, exclude_patterns: Array) -> Array:
 	var files: Array = []
@@ -10,10 +13,18 @@ func find_files(root_path: String, include_patterns: Array, exclude_patterns: Ar
 	print("[FileDiscovery] Starting file discovery in: %s" % root_path)
 	print("[FileDiscovery] Include patterns: %s" % str(include_patterns))
 	print("[FileDiscovery] Exclude patterns: %s" % str(exclude_patterns))
-	var dir = Directory.new()
-	if dir.open(root_path) != OK:
-		print("[FileDiscovery] ERROR: Failed to open root path: %s" % root_path)
-		return files
+	
+	if _get_is_godot_3():
+		var dir = Directory.new()
+		if dir.open(root_path) != OK:
+			print("[FileDiscovery] ERROR: Failed to open root path: %s" % root_path)
+			return files
+	else:
+		var dir = DirAccess.open(root_path)
+		if dir == null:
+			print("[FileDiscovery] ERROR: Failed to open root path: %s" % root_path)
+			return files
+	
 	_find_files_recursive(root_path, root_path, include_patterns, exclude_patterns, files, 0)
 	print("[FileDiscovery] File discovery complete, found %d files" % files.size())
 	return files
@@ -45,13 +56,22 @@ func _find_files_recursive(root_path: String, current_path: String, include_patt
 	if depth <= 2 and files.size() % 10 == 0 and files.size() > 0:
 		print("[FileDiscovery] Progress: Found %d files so far, scanning: %s" % [files.size(), current_path])
 	
-	var dir = Directory.new()
-	if dir.open(current_path) != OK:
-		return
+	var is_godot_3 = _get_is_godot_3()
+	var dir
 	
-	var list_result = dir.list_dir_begin(true, false)  # Skip navigational and hidden
-	if list_result != OK:
-		return
+	if is_godot_3:
+		dir = Directory.new()
+		if dir.open(current_path) != OK:
+			return
+		
+		var list_result = dir.list_dir_begin(true, false)  # Skip navigational and hidden
+		if list_result != OK:
+			return
+	else:
+		dir = DirAccess.open(current_path)
+		if dir == null:
+			return
+		dir.list_dir_begin()
 	
 	var file_name = dir.get_next()
 	var file_count = 0
@@ -66,10 +86,21 @@ func _find_files_recursive(root_path: String, current_path: String, include_patt
 			file_name = dir.get_next()
 			continue
 		
-		var full_path = current_path.plus_file(file_name)
+		# Build full path using appropriate API
+		var full_path: String
+		if is_godot_3:
+			full_path = current_path.plus_file(file_name)
+		else:
+			full_path = current_path.path_join(file_name)
 		full_path = _sanitize_path(full_path)
 		
-		if dir.current_is_dir():
+		var is_dir: bool
+		if is_godot_3:
+			is_dir = dir.current_is_dir()
+		else:
+			is_dir = dir.current_is_dir()
+		
+		if is_dir:
 			# Skip if this directory should be excluded
 			var relative_path = _make_relative(root_path, full_path)
 			if not _is_excluded(relative_path, exclude_patterns):
@@ -82,7 +113,8 @@ func _find_files_recursive(root_path: String, current_path: String, include_patt
 		
 		file_name = dir.get_next()
 	
-	dir.list_dir_end()
+	if is_godot_3:
+		dir.list_dir_end()
 
 func _is_excluded(file_path: String, exclude_patterns: Array) -> bool:
 	for pattern in exclude_patterns:
