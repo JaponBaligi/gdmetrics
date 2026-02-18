@@ -18,7 +18,7 @@ jobs:
       matrix:
         include:
           - branch: main
-            godot: "3.5.3"
+            godot: "3.5.0"
           - branch: godot4
             godot: "4.2.0"
 
