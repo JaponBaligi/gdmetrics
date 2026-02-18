@@ -1,104 +1,66 @@
-name: CI
+name: CI & Release
 
 on:
   push:
     branches: [main, godot4]
+    tags:
+      - "v*-godot3"
+      - "v*-godot4"
   pull_request:
     branches: [main, godot4]
   workflow_dispatch:
 
 jobs:
-  test_legacy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Prepare legacy project file
-        run: |
-          mv project.godot project.godot.gd4
-          cat <<'EOF' > project.godot
-          ; Engine configuration file.
-          ; It's best edited using the editor UI and not directly,
-          ; since the parameters that go here are not all obvious.
-          ;
-          ; Format:
-          ;   [section] ; section goes between []
-          ;   param=value ; assign values to parameters
-
-          config_version=4
-
-          [application]
-
-          config/name="gdscript_complexity"
-          EOF
-
-      - name: Download Godot 3.5.3 (legacy)
-        run: |
-          curl -L -o godot_legacy.zip https://github.com/godotengine/godot-builds/releases/download/3.5.3-stable/Godot_v3.5.3-stable_x11.64.zip
-          unzip -q godot_legacy.zip -d godot_legacy
-          sudo mv godot_legacy/Godot_v3.5.3-stable_x11.64 /usr/local/bin/godot
-          sudo chmod +x /usr/local/bin/godot
-
-      - name: Start Xvfb
-        run: |
-          Xvfb :99 -screen 0 1024x768x24 &
-          echo "DISPLAY=:99" >> $GITHUB_ENV
-
-      - name: Run CI analysis
-        run: |
-          godot --headless --version
-          godot --headless --script tests/ci_test.gd -- --project-path . --output ci_report.json --csv-output ci_report.csv
-
-      - name: Verify fixtures
-        run: godot --headless --script tests/verify_cc_cog.gd
-
-      - name: Validate confidence (accuracy gate)
-        run: godot --headless --script tests/validate_confidence.gd -- --min-r2 0.70 --metrics-out ci_metrics.json
-
-      - name: Upload CI artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-artifacts-3.5.3
-          path: |
-            ci_report.json
-            ci_report.csv
-            ci_metrics.json
-
-  test_modern:
+  test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        godot-version: ["4.0.4", "4.2.0"]
+        include:
+          - branch: main
+            godot: "3.5.3"
+          - branch: godot4
+            godot: "4.2.0"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Skip unrelated branch
+        run: |
+          if [ "${{ github.ref_name }}" != "${{ matrix.branch }}" ] && [[ "${{ github.ref }}" != refs/tags/* ]]; then
+            echo "Skipping job for unrelated branch"
+            exit 0
+          fi
+
       - name: Setup Godot
         uses: chickensoft-games/setup-godot@v1
         with:
-          version: ${{ matrix.godot-version }}
+          version: ${{ matrix.godot }}
           include-templates: false
           use-dotnet: false
 
       - name: Run CI analysis
         run: |
           godot --headless --version
-          godot --headless --script tests/ci_test.gd -- --project-path . --output ci_report.json --csv-output ci_report.csv
+          godot --headless --script tests/ci_test.gd -- \
+            --project-path . \
+            --output ci_report.json \
+            --csv-output ci_report.csv
 
       - name: Verify fixtures
         run: godot --headless --script tests/verify_cc_cog.gd
 
-      - name: Validate confidence (accuracy gate)
-        run: godot --headless --script tests/validate_confidence.gd -- --min-r2 0.70 --metrics-out ci_metrics.json
+      - name: Validate confidence gate
+        run: godot --headless --script tests/validate_confidence.gd -- \
+          --min-r2 0.70 \
+          --metrics-out ci_metrics.json
 
       - name: Upload CI artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ci-artifacts-${{ matrix.godot-version }}
+          name: ci-${{ matrix.branch }}
           path: |
             ci_report.json
             ci_report.csv
@@ -106,33 +68,39 @@ jobs:
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [test_legacy, test_modern]
+    needs: test
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate tag vs branch
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          BRANCH="$(git branch --contains HEAD | sed -n 's/* //p')"
+
+          if [[ "$TAG" == *"godot3"* && "$BRANCH" != "main" ]]; then
+            echo "godot3 tags must be created from main branch"
+            exit 1
+          fi
+
+          if [[ "$TAG" == *"godot4"* && "$BRANCH" != "godot4" ]]; then
+            echo "godot4 tags must be created from godot4 branch"
+            exit 1
+          fi
+
       - name: Package release
         run: |
           mkdir -p dist
-          zip -r dist/gdscript_complexity-${{ github.ref_name }}.zip \
+          zip -r dist/gdmetrics-${GITHUB_REF_NAME}.zip \
             addons/gdscript_complexity \
-            docs/USER_GUIDE.md \
-            docs/TECHNICAL.md \
-            docs/COMPATIBILITY.md \
-            docs/BREAKING_CHANGES.md \
-            docs/ERROR_CODES.md \
+            docs \
             README.md \
             LICENSE \
             complexity_config.example.json
 
-      - name: Upload release artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: gdscript_complexity-${{ github.ref_name }}
-          path: dist/gdscript_complexity-${{ github.ref_name }}.zip
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/gdscript_complexity-${{ github.ref_name }}.zip
+          files: dist/gdmetrics-${{ github.ref_name }}.zip
