@@ -4,6 +4,9 @@ class_name ClassDetector
 # class definition detector
 # detects: class_name, extends, class declarations
 
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
+
 class ClassInfo:
 	var name: String
 	var class_name_decl: String = ""
@@ -38,7 +41,7 @@ func detect_classes(tokens: Array) -> Array:
 	if tokens.size() == 0:
 		return []
 	
-	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load((SRC_ROOT + "/gd3/tokenizer.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/tokenizer.gd")).TokenType
 	
 	var i = 0
 	var current_class: ClassInfo = null
@@ -105,7 +108,7 @@ func detect_classes(tokens: Array) -> Array:
 
 func _ensure_error_codes():
 	if _error_codes == null:
-		_error_codes = load("res://src/error_codes.gd").new()
+		_error_codes = load(SRC_ROOT + "/error_codes.gd").new()
 
 func _append_error(code: String, detail: String):
 	_ensure_error_codes()
@@ -115,7 +118,7 @@ func _get_line_indent(tokens: Array, token_index: int) -> int:
 	if token_index <= 0:
 		return 0
 	
-	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load((SRC_ROOT + "/gd3/tokenizer.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/tokenizer.gd")).TokenType
 	var target_line = tokens[token_index].line
 	var i = token_index - 1
 	
@@ -151,7 +154,7 @@ func _count_indent(whitespace: String) -> int:
 	return count
 
 func _parse_class_name_declaration(tokens: Array, start: int) -> Dictionary:
-	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load((SRC_ROOT + "/gd3/tokenizer.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/tokenizer.gd")).TokenType
 	var i = start + 1
 	var name_value = ""
 	
@@ -167,7 +170,7 @@ func _parse_class_name_declaration(tokens: Array, start: int) -> Dictionary:
 	return {"class_name": name_value, "next_index": i}
 
 func _parse_extends_declaration(tokens: Array, start: int) -> Dictionary:
-	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load((SRC_ROOT + "/gd3/tokenizer.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/tokenizer.gd")).TokenType
 	var i = start + 1
 	var extends_class = ""
 	
@@ -183,7 +186,7 @@ func _parse_extends_declaration(tokens: Array, start: int) -> Dictionary:
 	return {"extends_class": extends_class, "next_index": i}
 
 func _parse_class_declaration(tokens: Array, start: int) -> Dictionary:
-	var TokenType = load("res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd").TokenType
+	var TokenType = load((SRC_ROOT + "/gd3/tokenizer.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/tokenizer.gd")).TokenType
 	var i = start + 1
 	var name_value = ""
 	

@@ -2,6 +2,9 @@ extends Object
 
 # Report generator for Godot 3.x (to_json, File)
 
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
+
 var FORBIDDEN_OUTPUT_PATHS = [
 	"project.godot",
 	".git",
@@ -184,7 +187,7 @@ func _check_output_overwrite(output_path: String) -> bool:
 
 func _format_error(code: String, detail: String) -> String:
 	if _error_codes == null:
-		_error_codes = load("res://src/error_codes.gd").new()
+		_error_codes = load(SRC_ROOT + "/error_codes.gd").new()
 	return _error_codes.format(code, detail)
 
 func generate_and_write(project_result, config) -> bool:

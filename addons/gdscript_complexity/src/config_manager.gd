@@ -3,6 +3,9 @@ extends Object
 # Configuration manager
 # handles JSON configuration parsing, validation, and defaults
 
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
+
 class Config:
 	var include_patterns: Array = []
 	var exclude_patterns: Array = []
@@ -72,13 +75,13 @@ var _error_codes = null
 
 func _init(config_file_path: String = ""):
 	config = Config.new()
-	_error_codes = load("res://src/error_codes.gd").new()
+	_error_codes = load(SRC_ROOT + "/error_codes.gd").new()
 	var version_info = Engine.get_version_info()
 	_is_godot_3 = version_info.get("major", 0) == 3
 	if _is_godot_3:
 		pass
 	else:
-		var helper_script = load("res://src/gd4/file_helper.gd")
+		var helper_script = load(SRC_ROOT + "/gd4/file_helper.gd")
 		if helper_script != null:
 			_file_helper = helper_script.new()
 	if config_file_path != "":
@@ -88,11 +91,11 @@ func _ensure_file_helper():
 	if _file_helper != null:
 		return
 	if _is_godot_3:
-		var helper_script = load("res://src/gd3/file_helper.gd")
+		var helper_script = load(SRC_ROOT + "/gd3/file_helper.gd")
 		if helper_script != null:
 			_file_helper = helper_script.new()
 	else:
-		var helper_script = load("res://src/gd4/file_helper.gd")
+		var helper_script = load(SRC_ROOT + "/gd4/file_helper.gd")
 		if helper_script != null:
 			_file_helper = helper_script.new()
 

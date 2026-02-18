@@ -4,6 +4,9 @@ class_name GDScriptTokenizer
 # Tokenizer for GDScript
 # Keywords, identifiers, operators, comments, strings, numbers 
 
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src" 
+
 var file_helper = null
 
 func _init():
@@ -11,9 +14,9 @@ func _init():
 	var is_godot_3 = version_info.get("major", 0) == 3
 	
 	if is_godot_3:
-		file_helper = load("res://src/gd3/file_helper.gd").new()
+		file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
 	else:
-		file_helper = load("res://src/gd4/file_helper.gd").new()
+		file_helper = load(SRC_ROOT + "/gd4/file_helper.gd").new()
 
 enum TokenType {
 	KEYWORD,
@@ -83,9 +86,9 @@ func tokenize_file(file_path: String) -> Array:
 	
 	if file_helper == null:
 		if is_godot_3:
-			file_helper = load("res://src/gd3/file_helper.gd").new()
+			file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
 		else:
-			file_helper = load("res://src/gd4/file_helper.gd").new()
+			file_helper = load(SRC_ROOT + "/gd4/file_helper.gd").new()
 	
 	var file = file_helper.open_read(file_path)
 	if file == null:
@@ -475,7 +478,7 @@ func _track_brackets(op: String, line_num: int, col: int):
 
 func _ensure_error_codes():
 	if _error_codes == null:
-		_error_codes = load("res://src/error_codes.gd").new()
+		_error_codes = load(SRC_ROOT + "/error_codes.gd").new()
 
 func _append_error(code: String, detail: String):
 	_ensure_error_codes()

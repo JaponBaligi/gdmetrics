@@ -2,11 +2,14 @@
 
 extends Object
 
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
+
 func summarize(file_results: Array, project_errors: Array = []) -> Dictionary:
 	var by_code: Dictionary = {}
 	var by_severity: Dictionary = {}
 	var total = 0
-	var codes = load("res://src/error_codes.gd").new()
+	var codes = load(SRC_ROOT + "/error_codes.gd").new()
 	
 	for msg in project_errors:
 		var code = _extract_code(msg)

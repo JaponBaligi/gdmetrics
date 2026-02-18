@@ -2,6 +2,9 @@ tool
 extends AcceptDialog
 class_name ConfigDialog
 
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
+
 # Configuration dialog (Godot 3.x version)
 
 signal config_saved
