@@ -1,0 +1,106 @@
+name: CI & Release
+
+on:
+  push:
+    branches: [main, godot4]
+    tags:
+      - "v*-godot3"
+      - "v*-godot4"
+  pull_request:
+    branches: [main, godot4]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - branch: main
+            godot: "3.5.3"
+          - branch: godot4
+            godot: "4.2.0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Skip unrelated branch
+        run: |
+          if [ "${{ github.ref_name }}" != "${{ matrix.branch }}" ] && [[ "${{ github.ref }}" != refs/tags/* ]]; then
+            echo "Skipping job for unrelated branch"
+            exit 0
+          fi
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v1
+        with:
+          version: ${{ matrix.godot }}
+          include-templates: false
+          use-dotnet: false
+
+      - name: Run CI analysis
+        run: |
+          godot --headless --version
+          godot --headless --script tests/ci_test.gd -- \
+            --project-path . \
+            --output ci_report.json \
+            --csv-output ci_report.csv
+
+      - name: Verify fixtures
+        run: godot --headless --script tests/verify_cc_cog.gd
+
+      - name: Validate confidence gate
+        run: godot --headless --script tests/validate_confidence.gd -- \
+          --min-r2 0.70 \
+          --metrics-out ci_metrics.json
+
+      - name: Upload CI artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-${{ matrix.branch }}
+          path: |
+            ci_report.json
+            ci_report.csv
+            ci_metrics.json
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate tag vs branch
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          BRANCH="$(git branch --contains HEAD | sed -n 's/* //p')"
+
+          if [[ "$TAG" == *"godot3"* && "$BRANCH" != "main" ]]; then
+            echo "godot3 tags must be created from main branch"
+            exit 1
+          fi
+
+          if [[ "$TAG" == *"godot4"* && "$BRANCH" != "godot4" ]]; then
+            echo "godot4 tags must be created from godot4 branch"
+            exit 1
+          fi
+
+      - name: Package release
+        run: |
+          mkdir -p dist
+          zip -r dist/gdmetrics-${GITHUB_REF_NAME}.zip \
+            addons/gdscript_complexity \
+            docs \
+            README.md \
+            LICENSE \
+            complexity_config.example.json
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/gdmetrics-${{ github.ref_name }}.zip
