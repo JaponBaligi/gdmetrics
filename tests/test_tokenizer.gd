@@ -32,7 +32,7 @@ func _init():
 		print("")
 	
 	print("=== Control Flow Detection ===")
-	var detector = preload("res://src/control_flow_detector.gd").new()
+	var detector = preload("res://addons/gdscript_complexity/src/control_flow_detector.gd").new()
 	var nodes = detector.detect_control_flow(tokens)
 	print("Control flow nodes found: %d" % nodes.size())
 	print("")
