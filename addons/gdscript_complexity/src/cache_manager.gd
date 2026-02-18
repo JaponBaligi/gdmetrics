@@ -37,13 +37,7 @@ var _is_godot_3: bool = false
 
 func _init(cache_directory: String = "", enable: bool = true):
 	enabled = enable
-	var version_info = Engine.get_version_info()
-	_is_godot_3 = version_info.get("major", 0) == 3
-	
-	if _is_godot_3:
-		_file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
-	else:
-		_file_helper = load(SRC_ROOT + "/gd4/file_helper.gd").new()
+	_file_helper = load(SRC_ROOT + "/gd4/file_helper.gd").new()
 	
 	if cache_directory == "":
 		cache_directory = ".gdcomplexity_cache"
@@ -60,11 +54,9 @@ func _ensure_cache_directory():
 		if not dir.dir_exists(cache_path):
 			dir.make_dir_recursive(cache_path)
 	else:
-		# Godot 4.x: Try to open parent directory and create cache_path
-		var dir = DirAccess.open(".")
-		if dir != null:
-			if not dir.dir_exists(cache_path):
-				dir.make_dir_recursive(cache_path)
+		# Godot 4.x: Use DirAccess static methods
+		if not DirAccess.dir_exists_absolute(cache_path):
+			DirAccess.make_dir_absolute(cache_path)
 
 # Calculate content-based hash of file
 func calculate_file_hash(file_path: String) -> String:
@@ -99,7 +91,7 @@ func calculate_config_hash(config) -> String:
 	
 	var json_string: String
 	if is_godot_3:
-		json_string = to_json(config_dict)
+		json_string = var2str(config_dict)  # Fallback for Godot 3
 	else:
 		var json = JSON.new()
 		json_string = json.stringify(config_dict)
@@ -110,7 +102,11 @@ func calculate_config_hash(config) -> String:
 func _hash_string(text: String) -> String:
 	var hash = 2166136261  # FNV offset basis (32-bit)
 	for i in range(text.length()):
-		var char_code = text.ord_at(i)
+		var char_code: int
+		if _is_godot_3:
+			char_code = text.ord_at(i)
+		else:
+			char_code = text.unicode_at(i)
 		hash = hash ^ char_code
 		hash = hash * 16777619  # FNV prime (32-bit)
 		# Keep within 32-bit range
@@ -224,7 +220,10 @@ func store_result(file_path: String, config, file_result) -> bool:
 	entry.config_hash = config_hash
 	# Use ticks for compatibility (milliseconds since engine start)
 	# For absolute time, we'd need OS.get_datetime() conversion, but ticks work for TTL
-	entry.timestamp = OS.get_ticks_msec()
+	if _is_godot_3:
+		entry.timestamp = OS.get_ticks_msec()
+	else:
+		entry.timestamp = Time.get_ticks_msec()
 	entry.result_data = result_data
 	
 	# Write cache entry
@@ -234,7 +233,7 @@ func store_result(file_path: String, config, file_result) -> bool:
 	
 	var json_string: String
 	if is_godot_3:
-		json_string = to_json(entry_dict)
+		json_string = var2str(entry_dict)  # Fallback for Godot 3
 	else:
 		var json = JSON.new()
 		json_string = json.stringify(entry_dict)
@@ -248,6 +247,7 @@ func store_result(file_path: String, config, file_result) -> bool:
 		file.store_string(json_string)
 		file.close()
 	else:
+		# Godot 4.x
 		var file = FileAccess.open(cache_file_path, FileAccess.WRITE)
 		if file == null:
 			return false

@@ -48,7 +48,7 @@ func start_analysis(root_path: String, config_data, adapter = null):  # ConfigMa
 	batch_analyzer.version_adapter = version_adapter
 	batch_analyzer.logger = logger
 	
-	var discovery_script = (SRC_ROOT + "/gd3/file_discovery.gd") if Engine.get_version_info().get("major", 0) == 3 else (SRC_ROOT + "/gd4/file_discovery.gd")
+	var discovery_script = SRC_ROOT + "/gd4/file_discovery.gd"
 	var discovery = load(discovery_script).new()
 	files = discovery.find_files(root_path, config.include_patterns, config.exclude_patterns)
 	
@@ -78,9 +78,19 @@ func _process_next_batch():
 			break
 		
 		var file_result = _analyze_file(file_path)
+		
+		# Handle null results
+		if file_result == null:
+			var batch_script = load(SRC_ROOT + "/batch_analyzer.gd")
+			if batch_script != null:
+				file_result = batch_script.create_file_result()
+				file_result.file_path = file_path
+				file_result.errors = [_error_codes.format("ANALYSIS_FAILED", "Analysis returned null")]
+				file_result.success = false
+		
 		project_result.file_results.append(file_result)
 		
-		if file_result.success:
+		if file_result != null and file_result.success:
 			project_result.successful_files += 1
 			project_result.total_cc += file_result.cc
 			project_result.total_cog += file_result.cog
@@ -103,11 +113,31 @@ func _process_next_batch():
 func _analyze_file(file_path: String):  # -> BatchAnalyzer.FileResult - loaded dynamically
 	# Create FileResult using helper method
 	var batch_script = load(SRC_ROOT + "/batch_analyzer.gd")
+	if batch_script == null:
+		_log_error("ANALYSIS_FAILED", "Failed to load batch_analyzer.gd")
+		return null
+	
 	var result = batch_script.create_file_result()
+	if result == null:
+		_log_error("ANALYSIS_FAILED", "Failed to create file_result")
+		return null
+	
 	result.file_path = file_path
 	_ensure_tools()
 	
+	if _tokenizer_class == null:
+		result.errors = [_error_codes.format("ANALYSIS_FAILED", "Failed to load tokenizer")]
+		result.success = false
+		_log_error("ANALYSIS_FAILED", "Failed to load tokenizer")
+		return result
+	
 	var tokenizer = _tokenizer_class.new()
+	if tokenizer == null:
+		result.errors = [_error_codes.format("ANALYSIS_FAILED", "Failed to create tokenizer instance")]
+		result.success = false
+		_log_error("ANALYSIS_FAILED", "Failed to create tokenizer instance")
+		return result
+	
 	var tokens = tokenizer.tokenize_file(file_path)
 	var tokenizer_errors = tokenizer.get_errors()
 	
@@ -252,7 +282,7 @@ func _log_error(code: String, message: String):
 func _ensure_tools():
 	if _tools_ready:
 		return
-	var tokenizer_script = "res://src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://src/tokenizer.gd"
+	var tokenizer_script = SRC_ROOT + "/tokenizer.gd"
 	_tokenizer_class = load(tokenizer_script)
 	_detector_instance = load(SRC_ROOT + "/control_flow_detector.gd").new()
 	_function_detector_instance = load(SRC_ROOT + "/function_detector.gd").new()

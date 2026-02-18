@@ -11,10 +11,8 @@ func _init():
 	var version_info = Engine.get_version_info()
 	var is_godot_3 = version_info.get("major", 0) == 3
 	
-	if is_godot_3:
-		file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
-	else:
-		file_helper = load(SRC_ROOT + "/gd4/file_helper.gd").new()
+	# Both Godot 3 and 4 use gd3/file_helper.gd (which is now compatible with both)
+	file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
 
 enum TokenType {
 	KEYWORD,
@@ -83,10 +81,8 @@ func tokenize_file(file_path: String) -> Array:
 	var is_godot_3 = version_info.get("major", 0) == 3
 	
 	if file_helper == null:
-		if is_godot_3:
-			file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
-		else:
-			file_helper = load(SRC_ROOT + "/gd4/file_helper.gd").new()
+		# Both Godot 3 and 4 use gd3/file_helper.gd (which is now compatible with both)
+		file_helper = load(SRC_ROOT + "/gd3/file_helper.gd").new()
 	
 	var file = file_helper.open_read(file_path)
 	if file == null:

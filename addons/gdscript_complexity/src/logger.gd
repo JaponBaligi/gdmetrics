@@ -85,7 +85,7 @@ func _append_file(message: String) -> void:
 func _ensure_file_helper():
 	if _file_helper != null:
 		return _file_helper
-	var helper_script = SRC_ROOT + ("/gd3/file_helper.gd" if _is_godot_3 else "/gd4/file_helper.gd")
+	var helper_script = SRC_ROOT + "/gd3/file_helper.gd"  # Works for both Godot 3 & 4
 	var helper_resource = load(helper_script)
 	if helper_resource != null:
 		_file_helper = helper_resource.new()

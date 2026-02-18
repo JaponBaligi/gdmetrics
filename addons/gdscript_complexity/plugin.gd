@@ -46,50 +46,23 @@ func _enter_tree():
 	
 	logger.configure(config_manager.get_config().logging_config)
 
-	var is_godot_3 = godot_version["major"] == 3
-	var dock_panel_script: String
-	if is_godot_3:
-		dock_panel_script = "res://addons/gdscript_complexity/gd3/dock_panel.gd"
-	else:
-		dock_panel_script = "res://addons/gdscript_complexity/gd4/dock_panel.gd"
-	dock_panel = load(dock_panel_script).new()
+	dock_panel = load("res://addons/gdscript_complexity/gd4/dock_panel.gd").new()
 	add_control_to_dock(DOCK_SLOT_LEFT_UL, dock_panel)
 	
-	var async_analyzer_script: String
-	if is_godot_3:
-		async_analyzer_script = "res://addons/gdscript_complexity/gd3/async_analyzer.gd"
-	else:
-		async_analyzer_script = "res://addons/gdscript_complexity/gd4/async_analyzer.gd"
-	async_analyzer = load(async_analyzer_script).new()
+	async_analyzer = load("res://addons/gdscript_complexity/gd4/async_analyzer.gd").new()
 	async_analyzer.batch_size = 10
 	async_analyzer.connect("progress_updated", Callable(self, "_on_progress_updated"))
 	async_analyzer.connect("file_analyzed", Callable(self, "_on_file_analyzed"))
 	async_analyzer.connect("analysis_complete", Callable(self, "_on_analysis_complete"))
 	async_analyzer.connect("analysis_cancelled", Callable(self, "_on_analysis_cancelled"))
-	# Connect process_next_batch_requested signal for Godot 3.x deferred processing
-	if version_adapter.is_godot_3:
-		async_analyzer.connect("process_next_batch_requested", Callable(self, "_on_process_next_batch_requested"))
 	
-	var annotation_manager_script: String
-	if is_godot_3:
-		annotation_manager_script = "res://addons/gdscript_complexity/gd3/annotation_manager.gd"
-	else:
-		annotation_manager_script = "res://addons/gdscript_complexity/gd4/annotation_manager.gd"
-	annotation_manager = load(annotation_manager_script).new(version_adapter)
+	annotation_manager = load("res://addons/gdscript_complexity/gd4/annotation_manager.gd").new(version_adapter)
 	if annotation_manager.is_supported():
 		logger.log_message("info", "Editor annotations supported (%s)" % annotation_manager.get_annotation_api())
 	else:
 		logger.log_message("info", "Editor annotations not available, using console logging")
 	
-	if version_adapter != null and not version_adapter.supports_editor_annotations():
-		logger.log_message("info", "Editor annotations disabled for Godot 3.x")
-	
-	var config_dialog_script: String
-	if is_godot_3:
-		config_dialog_script = "res://addons/gdscript_complexity/gd3/config_dialog.gd"
-	else:
-		config_dialog_script = "res://addons/gdscript_complexity/gd4/config_dialog.gd"
-	config_dialog = load(config_dialog_script).new()
+	config_dialog = load("res://addons/gdscript_complexity/gd4/config_dialog.gd").new()
 	config_dialog.set_config_manager(config_manager)
 	config_dialog.set_config_path("res://complexity_config.json")
 	config_dialog.connect("config_saved", Callable(self, "_on_config_saved"))
@@ -182,18 +155,12 @@ func _unload_script_cache():
 		ADDON_SRC + "logger.gd",
 		ADDON_SRC + "error_codes.gd",
 		ADDON_SRC + "error_summary.gd",
-		ADDON_SRC + "gd3/file_helper.gd",
 		ADDON_SRC + "gd4/file_helper.gd",
-		ADDON_SRC + "gd3/time_helper.gd",
 		ADDON_SRC + "gd4/time_helper.gd",
 		"res://addons/gdscript_complexity/version_adapter.gd",
-		"res://addons/gdscript_complexity/gd3/async_analyzer.gd",
 		"res://addons/gdscript_complexity/gd4/async_analyzer.gd",
-		"res://addons/gdscript_complexity/gd3/annotation_manager.gd",
 		"res://addons/gdscript_complexity/gd4/annotation_manager.gd",
-		"res://addons/gdscript_complexity/gd3/dock_panel.gd",
 		"res://addons/gdscript_complexity/gd4/dock_panel.gd",
-		"res://addons/gdscript_complexity/gd3/config_dialog.gd",
 		"res://addons/gdscript_complexity/gd4/config_dialog.gd"
 	]
 	for path in paths:
@@ -395,8 +362,7 @@ func _on_export_requested(format: String):
 			dock_panel.set_status("No analysis results to export")
 		return
 	
-	var report_gen_script := ADDON_SRC + ("gd3/report_generator.gd" if version_adapter.is_godot_3 else "gd4/report_generator.gd")
-	var report_gen = load(report_gen_script).new()
+	var report_gen = load(ADDON_SRC + "gd4/report_generator.gd").new()
 	var config = config_manager.get_config()
 	var ok = false
 	var output_path = ""
@@ -446,8 +412,7 @@ func _open_script_at_line(script_path: String, line: int):
 func _auto_export_reports(project_result):
 	if project_result == null or config_manager == null:
 		return
-	var report_gen_script := ADDON_SRC + ("gd3/report_generator.gd" if version_adapter.is_godot_3 else "gd4/report_generator.gd")
-	var report_gen = load(report_gen_script).new()
+	var report_gen = load(ADDON_SRC + "gd4/report_generator.gd").new()
 	var config = config_manager.get_config()
 	var formats = config.report_config.get("formats", ["json"])
 	var failed = false

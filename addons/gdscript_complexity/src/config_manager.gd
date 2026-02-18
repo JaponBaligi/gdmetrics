@@ -76,28 +76,18 @@ var _error_codes = null
 func _init(config_file_path: String = ""):
 	config = Config.new()
 	_error_codes = load(SRC_ROOT + "/error_codes.gd").new()
-	var version_info = Engine.get_version_info()
-	_is_godot_3 = version_info.get("major", 0) == 3
-	if _is_godot_3:
-		pass
-	else:
-		var helper_script = load(SRC_ROOT + "/gd4/file_helper.gd")
-		if helper_script != null:
-			_file_helper = helper_script.new()
+	var _file_helper_script = load(SRC_ROOT + "/gd4/file_helper.gd")
+	if _file_helper_script != null:
+		_file_helper = _file_helper_script.new()
 	if config_file_path != "":
 		load_config(config_file_path)
 
 func _ensure_file_helper():
 	if _file_helper != null:
 		return
-	if _is_godot_3:
-		var helper_script = load(SRC_ROOT + "/gd3/file_helper.gd")
-		if helper_script != null:
-			_file_helper = helper_script.new()
-	else:
-		var helper_script = load(SRC_ROOT + "/gd4/file_helper.gd")
-		if helper_script != null:
-			_file_helper = helper_script.new()
+	var helper_script = load(SRC_ROOT + "/gd4/file_helper.gd")
+	if helper_script != null:
+		_file_helper = helper_script.new()
 
 func load_config(config_file_path: String) -> bool:
 	errors.clear()
