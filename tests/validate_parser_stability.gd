@@ -3,6 +3,9 @@
 
 extends SceneTree
 
+const ADDON_ROOT := "res://addons/gdscript_complexity"
+const SRC_ROOT := ADDON_ROOT + "/src"
+
 class ValidationResult:
 	var passed: bool = false
 	var errors: Array = []
@@ -170,10 +173,14 @@ func validate_parser_stability(project_path: String) -> int:
 		return 1
 
 func test_multi_file_analysis(project_path: String) -> bool:
-	var config = load("res://addons/gdscript_complexity/src/config_manager.gd").new()
+	var config_script = load(SRC_ROOT + "/config_manager.gd")
+	assert(config_script != null, "Failed to load config_manager.gd")
+	var config = config_script.new()
 	var default_config = config.get_config()
 	
-	var batch_analyzer = load("res://addons/gdscript_complexity/src/batch_analyzer.gd").new()
+	var batch_analyzer_script = load(SRC_ROOT + "/batch_analyzer.gd")
+	assert(batch_analyzer_script != null, "Failed to load batch_analyzer.gd")
+	var batch_analyzer = batch_analyzer_script.new()
 	var project_result = batch_analyzer.analyze_project(project_path, default_config)
 	
 	result.stats["total_files"] = project_result.total_files
@@ -249,8 +256,10 @@ func test_stability() -> bool:
 		var temp_path = "user://temp_test_%d.gd" % test_cases.find(test_code)
 		
 		if _write_file(temp_path, test_code):
-			var tokenizer_script = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
-			var tokenizer = load(tokenizer_script).new()
+			var tokenizer_path = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
+			var tokenizer_script = load(tokenizer_path)
+			assert(tokenizer_script != null, "Failed to load tokenizer script")
+			var tokenizer = tokenizer_script.new()
 			var tokens = tokenizer.tokenize_file(temp_path)
 			var errors = tokenizer.get_errors()
 			
@@ -302,14 +311,20 @@ func test_indentation_ambiguity() -> bool:
 		var temp_path = "user://temp_indent_%d.gd" % test_cases.find(test_case)
 		
 		if _write_file(temp_path, test_case["code"]):
-			var tokenizer_script = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
-			var tokenizer = load(tokenizer_script).new()
+			var tokenizer_path = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
+			var tokenizer_script = load(tokenizer_path)
+			assert(tokenizer_script != null, "Failed to load tokenizer script")
+			var tokenizer = tokenizer_script.new()
 			var tokens = tokenizer.tokenize_file(temp_path)
 			
-			var func_detector = load("res://addons/gdscript_complexity/src/function_detector.gd").new()
+			var func_detector_script = load(SRC_ROOT + "/function_detector.gd")
+			assert(func_detector_script != null, "Failed to load function_detector.gd")
+			var func_detector = func_detector_script.new()
 			var functions = func_detector.detect_functions(tokens)
 			
-			var class_detector = load("res://addons/gdscript_complexity/src/class_detector.gd").new()
+			var class_detector_script = load(SRC_ROOT + "/class_detector.gd")
+			assert(class_detector_script != null, "Failed to load class_detector.gd")
+			var class_detector = class_detector_script.new()
 			var classes = class_detector.detect_classes(tokens)
 			
 			if tokens.size() == 0:
@@ -330,10 +345,14 @@ func test_indentation_ambiguity() -> bool:
 	return true
 
 func test_json_output(project_path: String) -> bool:
-	var config = load("res://addons/gdscript_complexity/src/config_manager.gd").new()
+	var config_script = load(SRC_ROOT + "/config_manager.gd")
+	assert(config_script != null, "Failed to load config_manager.gd")
+	var config = config_script.new()
 	var default_config = config.get_config()
 	
-	var batch_analyzer = load("res://addons/gdscript_complexity/src/batch_analyzer.gd").new()
+	var batch_analyzer_script = load(SRC_ROOT + "/batch_analyzer.gd")
+	assert(batch_analyzer_script != null, "Failed to load batch_analyzer.gd")
+	var batch_analyzer = batch_analyzer_script.new()
 	var project_result = batch_analyzer.analyze_project(project_path, default_config)
 	
 	if project_result.total_files == 0:
@@ -343,7 +362,9 @@ func test_json_output(project_path: String) -> bool:
 	var version_info = Engine.get_version_info()
 	var is_godot_3 = version_info.get("major", 0) == 3
 	var report_path = "res://addons/gdscript_complexity/src/gd3/report_generator.gd" if is_godot_3 else "res://addons/gdscript_complexity/src/gd4/report_generator.gd"
-	var report_gen = load(report_path).new()
+	var report_gen_script = load(report_path)
+	assert(report_gen_script != null, "Failed to load report_generator.gd")
+	var report_gen = report_gen_script.new()
 	var report = report_gen.generate_report(project_result, default_config)
 
 	var required_keys = ["version", "timestamp", "project", "files", "worst_offenders"]
@@ -409,8 +430,10 @@ func test_large_file_handling() -> bool:
 		return false
 	
 	var start_time = _get_ticks_msec()
-	var tokenizer_script = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
-	var tokenizer = load(tokenizer_script).new()
+	var tokenizer_path = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
+	var tokenizer_script = load(tokenizer_path)
+	assert(tokenizer_script != null, "Failed to load tokenizer script")
+	var tokenizer = tokenizer_script.new()
 	var tokens = tokenizer.tokenize_file(temp_path)
 	var errors = tokenizer.get_errors()
 	var end_time = _get_ticks_msec()
@@ -449,8 +472,10 @@ func test_deeply_nested_code() -> bool:
 		return false
 	
 	var start_time = _get_ticks_msec()
-	var tokenizer_script = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
-	var tokenizer = load(tokenizer_script).new()
+	var tokenizer_path = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
+	var tokenizer_script = load(tokenizer_path)
+	assert(tokenizer_script != null, "Failed to load tokenizer script")
+	var tokenizer = tokenizer_script.new()
 	var tokens = tokenizer.tokenize_file(temp_path)
 	var errors = tokenizer.get_errors()
 	var end_time = _get_ticks_msec()
@@ -551,8 +576,10 @@ func test_edge_cases() -> bool:
 		var temp_path = "user://temp_edge_%d.gd" % edge_cases.find(edge_case)
 		
 		if _write_file(temp_path, edge_case["code"]):
-			var tokenizer_script = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
-			var tokenizer = load(tokenizer_script).new()
+			var tokenizer_path = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
+			var tokenizer_script = load(tokenizer_path)
+			assert(tokenizer_script != null, "Failed to load tokenizer script")
+			var tokenizer = tokenizer_script.new()
 			var tokens = tokenizer.tokenize_file(temp_path)
 			var errors = tokenizer.get_errors()
 			
@@ -599,8 +626,10 @@ func test_performance_benchmarks() -> bool:
 			continue
 		
 		var start_time = _get_ticks_msec()
-		var tokenizer_script = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
-		var tokenizer = load(tokenizer_script).new()
+		var tokenizer_path = "res://addons/gdscript_complexity/src/gd3/tokenizer.gd" if Engine.get_version_info().get("major", 0) == 3 else "res://addons/gdscript_complexity/src/tokenizer.gd"
+		var tokenizer_script = load(tokenizer_path)
+		assert(tokenizer_script != null, "Failed to load tokenizer script")
+		var tokenizer = tokenizer_script.new()
 		var tokens = tokenizer.tokenize_file(temp_path)
 		var end_time = _get_ticks_msec()
 		
