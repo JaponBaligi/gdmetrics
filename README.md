@@ -1,4 +1,4 @@
-# gdmetrics (moved)
+﻿# gdmetrics (moved)
 
 This repository has been **split** into two Godot-major-specific repos:
 
